@@ -9,6 +9,14 @@ import { renderComparisonMatrix } from "./comparison-matrix";
 import { renderTimeline } from "./timeline";
 import { renderChartFocus } from "./chart-focus";
 import { renderClosing } from "./closing";
+import { renderSectionDivider } from "./section-divider";
+import { renderProblem } from "./problem";
+import { renderSolution } from "./solution";
+import { renderProcessFlow } from "./process-flow";
+import { renderCaseStudy } from "./case-study";
+import { renderQuote } from "./quote";
+import { renderSummary } from "./summary";
+import { renderImageText } from "./image-text";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -62,7 +70,34 @@ const layoutMap: Record<string, LayoutRenderer> = {
 
   // Closing
   closing: renderClosing,
-  quote_focus: renderClosing,
+
+  // Section divider
+  section_divider: renderSectionDivider,
+
+  // Problem
+  problem: renderProblem,
+
+  // Solution
+  solution: renderSolution,
+
+  // Process flow
+  process: renderProcessFlow,
+  process_flow: renderProcessFlow,
+
+  // Case study
+  case_study: renderCaseStudy,
+
+  // Quote
+  quote: renderQuote,
+  quote_focus: renderQuote,
+
+  // Summary / grid cards
+  summary: renderSummary,
+  grid_cards: renderSummary,
+
+  // Image + text
+  image_left_text_right: renderImageText,
+  image_right_text_left: renderImageText,
 };
 
 // Fallback for section_divider and other unhandled layouts
