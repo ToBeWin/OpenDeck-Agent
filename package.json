@@ -1,0 +1,10 @@
+{
+  "name": "opendeck-agent",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "pnpm --filter @opendeck/desktop-tauri dev",
+    "build": "pnpm --filter @opendeck/desktop-tauri build",
+    "render:test": "pnpm --filter @opendeck/node-renderer start"
+  }
+}

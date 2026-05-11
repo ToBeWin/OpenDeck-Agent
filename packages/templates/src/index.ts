@@ -1,0 +1,2 @@
+// @opendeck/templates — placeholder
+export {};
