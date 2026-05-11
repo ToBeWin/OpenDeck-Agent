@@ -1299,6 +1299,102 @@ body {
   border-top: 1px solid #2a2a4a;
 }
 
+.settings-test-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 8px;
+}
+
+.settings-test-message {
+  font-size: 12px;
+  color: #888;
+}
+
+.settings-test-message.test-ok {
+  color: #00d4aa;
+}
+
+.settings-test-message.test-fail {
+  color: #ff5252;
+}
+
+.settings-detecting {
+  font-size: 11px;
+  color: #4a6cf7;
+  font-weight: normal;
+  margin-left: 6px;
+}
+
+.settings-theme-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+
+.settings-theme-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 8px;
+  background: rgba(22, 33, 62, 0.4);
+  border: 1px solid #2a2a4a;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  font-family: inherit;
+  color: #b0b0b0;
+}
+
+.settings-theme-card:hover {
+  background: rgba(22, 33, 62, 0.7);
+  border-color: #4a6cf7;
+}
+
+.settings-theme-card.theme-active {
+  background: rgba(74, 108, 247, 0.15);
+  border-color: #4a6cf7;
+  color: #e0e0e0;
+}
+
+.theme-preview-swatch {
+  width: 48px;
+  height: 28px;
+  border-radius: 4px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.theme-preview-swatch[data-theme="bloomberg_dark"] {
+  background: linear-gradient(135deg, #121212 50%, #FFA726 50%);
+}
+
+.theme-preview-swatch[data-theme="apple_keynote"] {
+  background: linear-gradient(135deg, #ffffff 50%, #007AFF 50%);
+}
+
+.theme-preview-swatch[data-theme="mckinsey_consulting"] {
+  background: linear-gradient(135deg, #003366 50%, #4A90D9 50%);
+}
+
+.theme-preview-swatch[data-theme="dark_elegance"] {
+  background: linear-gradient(135deg, #1a1a2e 50%, #e94560 50%);
+}
+
+.theme-preview-swatch[data-theme="minimal_light"] {
+  background: linear-gradient(135deg, #fafafa 50%, #333333 50%);
+}
+
+.theme-preview-swatch[data-theme="tech_gradient"] {
+  background: linear-gradient(135deg, #0f0c29 50%, #00d2ff 50%);
+}
+
+.theme-card-name {
+  font-size: 10px;
+  text-align: center;
+  line-height: 1.2;
+}
+
 /* ── Loading Spinner ── */
 
 .loading-spinner {

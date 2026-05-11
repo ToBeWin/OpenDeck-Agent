@@ -126,15 +126,26 @@ export const useStore = create<AppState>((set, get) => ({
     })),
 
   generateFromPrompt: async (prompt: string) => {
+    const config = get().providerConfig;
+    const themeMap: Record<string, string> = {
+      "Bloomberg Dark": "bloomberg_dark",
+      "Apple Keynote": "apple_keynote",
+      "McKinsey Consulting": "mckinsey_consulting",
+      "Dark Elegance": "dark_elegance",
+      "Minimal Light": "minimal_light",
+      "Tech Gradient": "tech_gradient",
+    };
     set({ loading: true, error: null, generationStep: "理解需求..." });
     try {
-      set({ generationStep: "生成演示文稿..." });
-      const { invoke } = await import("@tauri-apps/api/core");
-      const result = await invoke<DeckData>("generate_deck", {
-        prompt,
-        options: get().providerConfig,
+      set({ generationStep: "规划结构..." });
+      const { generateDeck } = await import("./lib/tauri");
+      const result = await generateDeck(prompt, {
+        provider: config.provider,
+        language: config.language,
+        theme: themeMap[config.theme] ?? "bloomberg_dark",
       });
-      set({ deck: result, currentSlideIndex: 0, generationStep: "完成" });
+      const deck = (result as { deck: DeckData }).deck;
+      set({ deck, currentSlideIndex: 0, generationStep: "完成" });
     } catch {
       // Fallback: load sample deck (web dev mode or invoke failed)
       set({ deck: sampleDeck, currentSlideIndex: 0, generationStep: "完成" });

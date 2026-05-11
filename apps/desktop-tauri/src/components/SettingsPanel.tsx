@@ -1,9 +1,18 @@
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useStore } from "../store";
 
 interface SettingsPanelProps {
   onClose: () => void;
 }
+
+const THEMES = [
+  "Bloomberg Dark",
+  "Apple Keynote",
+  "McKinsey Consulting",
+  "Dark Elegance",
+  "Minimal Light",
+  "Tech Gradient",
+];
 
 export function SettingsPanel({ onClose }: SettingsPanelProps) {
   const providerConfig = useStore((s) => s.providerConfig);
@@ -11,6 +20,42 @@ export function SettingsPanel({ onClose }: SettingsPanelProps) {
 
   const [local, setLocal] = useState({ ...providerConfig });
   const [testStatus, setTestStatus] = useState<"idle" | "testing" | "ok" | "fail">("idle");
+  const [testMessage, setTestMessage] = useState("");
+  const [ollamaModels, setOllamaModels] = useState<string[]>([]);
+  const [detectingModels, setDetectingModels] = useState(false);
+
+  const detectOllama = useCallback(async () => {
+    setDetectingModels(true);
+    try {
+      const { checkProvider } = await import("../lib/tauri");
+      const status = await checkProvider("ollama");
+      if (status.available) {
+        // Try to get model list from the sidecar
+        const { listProviders } = await import("../lib/tauri");
+        const list = await listProviders();
+        // Filter for ollama-related providers
+        const models = list.providers
+          .filter((p: string) => p.startsWith("ollama-"))
+          .map((p: string) => p.replace("ollama-", ""));
+        if (models.length > 0) {
+          setOllamaModels(models);
+          if (!local.ollamaModel || local.ollamaModel === "llama3") {
+            setLocal((prev) => ({ ...prev, ollamaModel: models[0] }));
+          }
+        }
+      }
+    } catch {
+      // Ollama not available
+    } finally {
+      setDetectingModels(false);
+    }
+  }, [local.ollamaModel]);
+
+  useEffect(() => {
+    if (local.provider === "ollama") {
+      detectOllama();
+    }
+  }, [local.provider, detectOllama]);
 
   function handleSave() {
     updateProviderConfig(local);
@@ -29,12 +74,20 @@ export function SettingsPanel({ onClose }: SettingsPanelProps) {
 
   async function handleTestConnection() {
     setTestStatus("testing");
+    setTestMessage("");
     try {
-      const { invoke } = await import("@tauri-apps/api/core");
-      await invoke("test_connection", { config: local });
-      setTestStatus("ok");
-    } catch {
+      const { checkProvider } = await import("../lib/tauri");
+      const status = await checkProvider(local.provider);
+      if (status.available) {
+        setTestStatus("ok");
+        setTestMessage("Connected successfully");
+      } else {
+        setTestStatus("fail");
+        setTestMessage(status.reason || "Provider not available");
+      }
+    } catch (e) {
       setTestStatus("fail");
+      setTestMessage(String(e));
     }
   }
 
@@ -63,9 +116,9 @@ export function SettingsPanel({ onClose }: SettingsPanelProps) {
                 })
               }
             >
-              <option value="mock">Mock</option>
-              <option value="ollama">Ollama</option>
-              <option value="openai">OpenAI</option>
+              <option value="mock">Mock (Demo)</option>
+              <option value="ollama">Ollama (Local)</option>
+              <option value="openai">OpenAI Compatible</option>
             </select>
           </div>
 
@@ -84,17 +137,41 @@ export function SettingsPanel({ onClose }: SettingsPanelProps) {
                 />
               </div>
               <div className="settings-field">
-                <label className="settings-label">Model</label>
-                <input
-                  className="settings-input"
-                  type="text"
-                  value={local.ollamaModel}
-                  onChange={(e) =>
-                    setLocal({ ...local, ollamaModel: e.target.value })
-                  }
-                  placeholder="llama3"
-                />
+                <label className="settings-label">
+                  Model
+                  {detectingModels && (
+                    <span className="settings-detecting"> detecting...</span>
+                  )}
+                </label>
+                {ollamaModels.length > 0 ? (
+                  <select
+                    className="settings-select"
+                    value={local.ollamaModel}
+                    onChange={(e) =>
+                      setLocal({ ...local, ollamaModel: e.target.value })
+                    }
+                  >
+                    {ollamaModels.map((m) => (
+                      <option key={m} value={m}>
+                        {m}
+                      </option>
+                    ))}
+                  </select>
+                ) : (
+                  <input
+                    className="settings-input"
+                    type="text"
+                    value={local.ollamaModel}
+                    onChange={(e) =>
+                      setLocal({ ...local, ollamaModel: e.target.value })
+                    }
+                    placeholder="llama3"
+                  />
+                )}
               </div>
+              <p className="settings-hint">
+                Make sure Ollama is running: <code>ollama serve</code>
+              </p>
             </>
           )}
 
@@ -141,24 +218,33 @@ export function SettingsPanel({ onClose }: SettingsPanelProps) {
 
           {local.provider === "mock" && (
             <p className="settings-hint">
-              Demo mode — generates sample content
+              Demo mode — generates sample content without a real AI model
             </p>
           )}
 
           {local.provider !== "mock" && (
-            <button
-              className="settings-btn"
-              onClick={handleTestConnection}
-              disabled={testStatus === "testing"}
-            >
-              {testStatus === "testing"
-                ? "Testing..."
-                : testStatus === "ok"
-                  ? "Connected ✓"
-                  : testStatus === "fail"
-                    ? "Failed — Retry"
-                    : "Test Connection"}
-            </button>
+            <div className="settings-test-row">
+              <button
+                className="settings-btn"
+                onClick={handleTestConnection}
+                disabled={testStatus === "testing"}
+              >
+                {testStatus === "testing"
+                  ? "Testing..."
+                  : testStatus === "ok"
+                    ? "Connected"
+                    : testStatus === "fail"
+                      ? "Retry"
+                      : "Test Connection"}
+              </button>
+              {testMessage && (
+                <span
+                  className={`settings-test-message ${testStatus === "ok" ? "test-ok" : testStatus === "fail" ? "test-fail" : ""}`}
+                >
+                  {testMessage}
+                </span>
+              )}
+            </div>
           )}
         </div>
 
@@ -189,18 +275,20 @@ export function SettingsPanel({ onClose }: SettingsPanelProps) {
         {/* Theme Section */}
         <div className="settings-section">
           <h3 className="settings-section-title">Theme</h3>
-          <div className="settings-field">
-            <select
-              className="settings-select"
-              value={local.theme}
-              onChange={(e) =>
-                setLocal({ ...local, theme: e.target.value })
-              }
-            >
-              <option value="Bloomberg Dark">Bloomberg Dark</option>
-              <option value="Apple Keynote">Apple Keynote</option>
-              <option value="McKinsey Consulting">McKinsey Consulting</option>
-            </select>
+          <div className="settings-theme-grid">
+            {THEMES.map((theme) => (
+              <button
+                key={theme}
+                className={`settings-theme-card ${local.theme === theme ? "theme-active" : ""}`}
+                onClick={() => setLocal({ ...local, theme })}
+              >
+                <div
+                  className="theme-preview-swatch"
+                  data-theme={theme.toLowerCase().replace(/\s+/g, "_")}
+                />
+                <span className="theme-card-name">{theme}</span>
+              </button>
+            ))}
           </div>
         </div>
 
