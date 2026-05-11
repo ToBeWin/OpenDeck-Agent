@@ -1,24 +1,19 @@
 import PptxGenJS from "pptxgenjs";
 import { SlideData } from "../renderer";
+import { type ThemeTokens } from "../theme";
 import { SlideRenderStats } from "./index";
 
-/**
- * Insight / Big Number layout.
- * Large metric number prominently displayed + supporting text below.
- */
 export function renderInsight(
   pres: PptxGenJS,
   slide: SlideData,
-  _slideIndex: number
+  _slideIndex: number,
+  theme: ThemeTokens
 ): SlideRenderStats {
   const pptxSlide = pres.addSlide();
-
   let editableTextCount = 0;
 
-  // Background
-  pptxSlide.background = { fill: "F5F7FA" };
+  pptxSlide.background = { fill: theme.colors.surface };
 
-  // Extract elements
   const titleEl = slide.elements.find(
     (el) => el.type === "text" && (el.role === "title" || el.role === "headline")
   );
@@ -32,40 +27,32 @@ export function renderInsight(
     (el) => el.type === "text" && el.role === "footnote"
   );
 
-  // Title — top left
   if (titleEl) {
     pptxSlide.addText(titleEl.content || "", {
       x: 0.8,
       y: 0.5,
       w: 11.7,
       h: 1.0,
-      fontSize: 28,
+      fontSize: theme.typography.titleSize - 16,
       bold: true,
-      color: "1A1A2E",
+      color: theme.colors.textPrimary,
       align: "left",
-      fontFace: "Microsoft YaHei",
+      fontFace: theme.typography.titleFont,
     });
     editableTextCount++;
   }
 
-  // Metric card background
+  // Metric card
   pptxSlide.addShape(pres.ShapeType.roundRect, {
     x: 2.5,
     y: 2.0,
     w: 8.33,
     h: 3.0,
-    fill: { color: "FFFFFF" },
-    shadow: {
-      type: "outer",
-      blur: 10,
-      offset: 2,
-      color: "000000",
-      opacity: 0.1,
-    },
+    fill: { color: theme.colors.background },
+    shadow: { type: "outer", blur: 10, offset: 2, color: "000000", opacity: 0.1 },
     rectRadius: 0.15,
   });
 
-  // Large metric number — center of card
   if (metricEl) {
     pptxSlide.addText(metricEl.content || "", {
       x: 2.5,
@@ -74,48 +61,44 @@ export function renderInsight(
       h: 2.0,
       fontSize: 72,
       bold: true,
-      color: "1565C0",
+      color: theme.colors.primary,
       align: "center",
-      fontFace: "Microsoft YaHei",
+      fontFace: theme.typography.titleFont,
       valign: "middle",
     });
     editableTextCount++;
   }
 
-  // Supporting body text
   if (bodyEl) {
     pptxSlide.addText(bodyEl.content || "", {
       x: 2.5,
       y: 4.2,
       w: 8.33,
       h: 0.8,
-      fontSize: 18,
-      color: "546E7A",
+      fontSize: theme.typography.bodySize,
+      color: theme.colors.textSecondary,
       align: "center",
-      fontFace: "Microsoft YaHei",
+      fontFace: theme.typography.bodyFont,
       valign: "top",
     });
     editableTextCount++;
   }
 
-  // Footnote
   if (footnoteEl) {
     pptxSlide.addText(footnoteEl.content || "", {
       x: 0.8,
       y: 6.5,
       w: 11.7,
       h: 0.5,
-      fontSize: 12,
-      color: "90A4AE",
+      fontSize: theme.typography.captionSize - 2,
+      color: theme.colors.secondary,
       align: "center",
-      fontFace: "Microsoft YaHei",
+      fontFace: theme.typography.bodyFont,
     });
     editableTextCount++;
   }
 
-  if (slide.speakerNote) {
-    pptxSlide.addNotes(slide.speakerNote);
-  }
+  if (slide.speakerNote) pptxSlide.addNotes(slide.speakerNote);
 
   return { editableTextCount, imageCount: 0, chartCount: 0, tableCount: 0 };
 }

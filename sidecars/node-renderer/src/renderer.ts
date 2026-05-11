@@ -2,6 +2,7 @@ import * as fs from "fs";
 import * as path from "path";
 import PptxGenJS from "pptxgenjs";
 import { renderSlide } from "./layouts";
+import { resolveTheme, type ThemeTokens } from "./theme";
 
 // ---------------------------------------------------------------------------
 // Types (loosely matching the Slide DSL from AGENTS.md)
@@ -106,6 +107,9 @@ export async function renderPptx(
   let chartCount = 0;
   let tableCount = 0;
 
+  // Resolve theme from deck data or use default
+  const theme = resolveTheme(deck.theme as Partial<ThemeTokens> | undefined);
+
   // Create presentation — 16:9 (13.33 x 7.5 inches)
   const pres = new PptxGenJS();
   pres.defineLayout({ name: "CUSTOM_16x9", width: 13.33, height: 7.5 });
@@ -119,7 +123,7 @@ export async function renderPptx(
   for (let i = 0; i < deck.slides.length; i++) {
     const slide = deck.slides[i];
     try {
-      const stats = renderSlide(pres, slide, i);
+      const stats = renderSlide(pres, slide, i, theme);
       editableTextCount += stats.editableTextCount;
       imageCount += stats.imageCount;
       chartCount += stats.chartCount;

@@ -1,5 +1,6 @@
 import PptxGenJS from "pptxgenjs";
 import { SlideData } from "../renderer";
+import { type ThemeTokens } from "../theme";
 import { renderCover } from "./cover";
 import { renderAgenda } from "./agenda";
 import { renderInsight } from "./insight";
@@ -23,7 +24,8 @@ export interface SlideRenderStats {
 export type LayoutRenderer = (
   pres: PptxGenJS,
   slide: SlideData,
-  slideIndex: number
+  slideIndex: number,
+  theme: ThemeTokens
 ) => SlideRenderStats;
 
 // ---------------------------------------------------------------------------
@@ -67,11 +69,12 @@ const layoutMap: Record<string, LayoutRenderer> = {
 function renderFallback(
   pres: PptxGenJS,
   slide: SlideData,
-  slideIndex: number
+  slideIndex: number,
+  theme: ThemeTokens
 ): SlideRenderStats {
   const pptxSlide = pres.addSlide();
+  pptxSlide.background = { fill: theme.colors.background };
 
-  // Try to render title
   const title = slide.elements.find(
     (el) => el.type === "text" && (el.role === "title" || el.role === "headline")
   );
@@ -85,11 +88,11 @@ function renderFallback(
       y: 1.5,
       w: 11.7,
       h: 1.5,
-      fontSize: 36,
+      fontSize: theme.typography.titleSize - 8,
       bold: true,
-      color: "1A1A2E",
+      color: theme.colors.textPrimary,
       align: "left",
-      fontFace: "Microsoft YaHei",
+      fontFace: theme.typography.titleFont,
     });
   }
 
@@ -99,10 +102,10 @@ function renderFallback(
       y: 3.2,
       w: 11.7,
       h: 3.0,
-      fontSize: 18,
-      color: "333333",
+      fontSize: theme.typography.bodySize,
+      color: theme.colors.textSecondary,
       align: "left",
-      fontFace: "Microsoft YaHei",
+      fontFace: theme.typography.bodyFont,
       valign: "top",
     });
   }
@@ -122,8 +125,9 @@ function renderFallback(
 export function renderSlide(
   pres: PptxGenJS,
   slide: SlideData,
-  slideIndex: number
+  slideIndex: number,
+  theme: ThemeTokens
 ): SlideRenderStats {
   const renderer = layoutMap[slide.layout] || renderFallback;
-  return renderer(pres, slide, slideIndex);
+  return renderer(pres, slide, slideIndex, theme);
 }

@@ -1,24 +1,19 @@
 import PptxGenJS from "pptxgenjs";
 import { SlideData } from "../renderer";
+import { type ThemeTokens } from "../theme";
 import { SlideRenderStats } from "./index";
 
-/**
- * Closing layout.
- * Large "Thank You" or closing message, centered.
- */
 export function renderClosing(
   pres: PptxGenJS,
   slide: SlideData,
-  _slideIndex: number
+  _slideIndex: number,
+  theme: ThemeTokens
 ): SlideRenderStats {
   const pptxSlide = pres.addSlide();
-
   let editableTextCount = 0;
 
-  // Background — dark like cover
-  pptxSlide.background = { fill: "0F1B2D" };
+  pptxSlide.background = { fill: theme.colors.background };
 
-  // Extract elements
   const titleEl = slide.elements.find(
     (el) => el.type === "text" && (el.role === "title" || el.role === "headline")
   );
@@ -35,10 +30,9 @@ export function renderClosing(
     y: 2.2,
     w: 2.0,
     h: 0.06,
-    fill: { color: "4FC3F7" },
+    fill: { color: theme.colors.primary },
   });
 
-  // Main closing text — large centered
   const closingText = titleEl?.content || "Thank You";
   pptxSlide.addText(closingText, {
     x: 1.0,
@@ -47,40 +41,38 @@ export function renderClosing(
     h: 2.0,
     fontSize: 52,
     bold: true,
-    color: "FFFFFF",
+    color: theme.colors.textInverse,
     align: "center",
-    fontFace: "Microsoft YaHei",
+    fontFace: theme.typography.titleFont,
     valign: "middle",
   });
   editableTextCount++;
 
-  // Body text (main closing message)
   if (bodyEl) {
     pptxSlide.addText(bodyEl.content || "", {
       x: 2.0,
       y: 4.5,
       w: 9.33,
       h: 1.2,
-      fontSize: 18,
-      color: "B0BEC5",
+      fontSize: theme.typography.bodySize,
+      color: theme.colors.textSecondary,
       align: "center",
-      fontFace: "Microsoft YaHei",
+      fontFace: theme.typography.bodyFont,
       valign: "top",
     });
     editableTextCount++;
   }
 
-  // Subtitle (contact info, etc.)
   if (subtitleEl) {
     pptxSlide.addText(subtitleEl.content || "", {
       x: 2.0,
       y: 5.8,
       w: 9.33,
       h: 0.6,
-      fontSize: 14,
-      color: "78909C",
+      fontSize: theme.typography.captionSize,
+      color: theme.colors.secondary,
       align: "center",
-      fontFace: "Microsoft YaHei",
+      fontFace: theme.typography.bodyFont,
     });
     editableTextCount++;
   }
@@ -91,12 +83,10 @@ export function renderClosing(
     y: 6.0,
     w: 2.0,
     h: 0.06,
-    fill: { color: "4FC3F7" },
+    fill: { color: theme.colors.primary },
   });
 
-  if (slide.speakerNote) {
-    pptxSlide.addNotes(slide.speakerNote);
-  }
+  if (slide.speakerNote) pptxSlide.addNotes(slide.speakerNote);
 
   return { editableTextCount, imageCount: 0, chartCount: 0, tableCount: 0 };
 }
