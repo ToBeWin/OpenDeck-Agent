@@ -1,38 +1,46 @@
 # OpenDeck Agent — Open-Source Local-First AI Presentation Agent
 
-Desktop AI agent that turns natural language into professional, editable presentations.
+Desktop AI agent that turns natural language, documents, and research materials into professional, editable presentations.
+
+> **Goal:** Become the benchmark open-source PPT Agent — a local AI presentation strategist, copywriter, visual planner, slide designer, and production assistant.
 
 ## Tech Stack
 
 | Layer | Technology |
 |-------|-----------|
 | Desktop shell | Tauri 2.0 |
-| Frontend | React + TypeScript |
+| Frontend | React 18 + TypeScript + Tailwind CSS |
 | Core backend | Rust |
 | Renderer sidecar | Node.js + PptxGenJS |
+| Schema validation | Zod |
+| Testing | Vitest |
 | Build orchestration | pnpm workspaces |
 
 ## Project Structure
 
 ```
 OpenDeck-Agent/
-├── apps/                  # Tauri desktop application
+├── apps/
+│   └── desktop-tauri/         # Tauri 2.0 desktop app (React + Rust)
+│       ├── src/               # React UI — GeneratePanel, theme, layout
+│       └── src-tauri/         # Rust core — sidecar lifecycle, file I/O
 ├── packages/
-│   ├── agent-core/        # Central orchestration and intent routing
-│   ├── slide-dsl/         # Slide DSL schema, validation, and serialization
-│   ├── templates/         # Presentation template definitions and metadata
-│   ├── layout-engine/     # Spatial layout computation for slide elements
-│   ├── render-pptx/       # PPTX rendering logic (drives the sidecar)
-│   ├── visual-planner/    # Slide sequence planning and content strategy
-│   ├── asset-manager/     # Image, font, and media asset resolution
-│   ├── image-providers/   # Pluggable image source adapters (local, Unsplash, etc.)
-│   ├── model-providers/   # LLM provider abstraction layer
-│   └── quality/           # Output quality checks and scoring
+│   ├── slide-dsl/             # ✅ Slide DSL schema (Zod), types, validator
+│   ├── templates/             # ✅ 3 themes: Apple Keynote, Bloomberg Dark, McKinsey
+│   ├── agent-core/            # Agent orchestration (placeholder)
+│   ├── model-providers/       # LLM provider abstraction (placeholder)
+│   ├── image-providers/       # Image source adapters (placeholder)
+│   ├── visual-planner/        # Visual planning (placeholder)
+│   ├── asset-manager/         # Asset resolution (placeholder)
+│   ├── layout-engine/         # Layout computation (placeholder)
+│   ├── render-pptx/           # PPTX rendering logic (placeholder)
+│   └── quality/               # Quality scoring (placeholder)
 ├── sidecars/
-│   └── node-renderer/     # Node.js sidecar — JSON-RPC renderer producing PPTX
+│   └── node-renderer/         # ✅ JSON-RPC sidecar — 8 slide layouts, theme-aware
 ├── examples/
-│   └── decks/             # Example Slide DSL JSON files and outputs
-└── docs/                  # Protocol specs, architecture docs, guides
+│   └── decks/                 # ✅ Sample 8-slide deck (Chinese AI industry analysis)
+├── docs/                      # Protocol specs, architecture docs, plans
+└── AGENTS.md                  # Full product specification
 ```
 
 ## Getting Started
@@ -42,8 +50,6 @@ OpenDeck-Agent/
 - **Node.js** 20 or later
 - **pnpm** 9 or later
 - **Rust toolchain** (rustup — includes `cargo`, `rustc`, and the Tauri-required targets)
-
-Verify your environment:
 
 ```bash
 node --version    # >= 20
@@ -63,83 +69,103 @@ pnpm install
 pnpm dev
 ```
 
-This starts the Tauri desktop app with hot-reload for the React frontend and the Node renderer sidecar.
+Starts the Tauri desktop app with hot-reload for the React frontend.
 
-### Production Build
+### Build Sidecar
 
 ```bash
-pnpm build
+pnpm --filter @opendeck/node-renderer build
 ```
 
-Produces platform-specific installers under `apps/*/target/release/bundle/`.
+### Test Sidecar Manually
 
-## Architecture Overview
+```bash
+# Ping
+echo '{"id":"1","method":"ping","params":{}}' | node sidecars/node-renderer/dist/index.js
 
-The generation pipeline transforms user intent into a finished presentation through five stages:
+# Render PPTX
+echo '{"id":"2","method":"render.pptx","params":{"deckPath":"examples/decks/sample-deck.json","outputPath":"/tmp/output.pptx","mode":"editable"}}' | node sidecars/node-renderer/dist/index.js
+```
+
+### Run Tests
+
+```bash
+pnpm --filter @opendeck/slide-dsl test    # Schema validation tests
+pnpm --filter @opendeck/templates test    # Theme tests
+```
+
+## Architecture
 
 ```
 User Intent
-    │
-    ▼
-Slide DSL        — Structured JSON describing slides, content, and metadata
-    │
-    ▼
-Template Engine  — Selects and fills a presentation template
-    │
-    ▼
-Layout Engine    — Computes element positions, sizes, and typography
-    │
-    ▼
-Renderer         — Produces output in the target format
-    │
-    ▼
-PPTX / HTML / PDF
+    → Structured Requirement
+    → Deck Plan
+    → Slide DSL (validated JSON)
+    → Template Engine (theme tokens)
+    → Layout Engine (positioned elements)
+    → Renderer (PptxGenJS → editable PPTX)
+    → Quality Critic
+    → Revision Loop
 ```
 
-Each stage is an independent package with a well-defined interface, making the pipeline testable and extensible at every boundary.
+Each stage is an independent package with a well-defined interface.
 
 ## Sidecar Protocol
 
-The **Node renderer sidecar** is a separate process that the Tauri shell spawns on demand. Communication uses a JSON-RPC-like protocol over **stdio** (newline-delimited JSON).
+The Node renderer sidecar communicates via **JSON-RPC over stdio** (newline-delimited JSON).
 
-- Request: `{ "id": string, "method": string, "params": object }`
-- Response: `{ "id": string, "result": object }` or `{ "id": string, "error": { "code": number, "message": string } }`
+| Method | Description |
+|--------|-------------|
+| `ping` | Health check → `{ pong: true }` |
+| `render.pptx` | Render deck JSON → editable PPTX |
 
-Key methods include `ping` (health check) and `render.pptx` (deck rendering).
+See **[docs/SIDECAR_PROTOCOL.md](docs/SIDECAR_PROTOCOL.md)** for full protocol specification.
 
-For the full protocol specification, request/response schemas, error codes, and example exchanges, see **[docs/SIDECAR_PROTOCOL.md](docs/SIDECAR_PROTOCOL.md)**.
+## Slide DSL
 
-## Packages
+The Slide DSL is the canonical representation of a presentation deck. It is:
 
-| Package | Purpose |
-|---------|---------|
-| `agent-core` | Central orchestration — routes user intent, manages conversation state, and coordinates the pipeline |
-| `slide-dsl` | Defines the Slide DSL JSON schema, provides validation, parsing, and serialization |
-| `templates` | Presentation template catalog — slide masters, color schemes, and layout presets |
-| `layout-engine` | Computes spatial layout for text boxes, images, charts, and tables on each slide |
-| `render-pptx` | Drives the Node sidecar to emit editable `.pptx` files from laid-out slide data |
-| `visual-planner` | Plans slide sequences, determines content flow, and balances visual density |
-| `asset-manager` | Resolves and caches images, icons, fonts, and other media assets |
-| `image-providers` | Pluggable adapters for image sources (local files, Unsplash, DALL-E, etc.) |
-| `model-providers` | Abstraction layer over LLM providers (OpenAI, Anthropic, local models, etc.) |
-| `quality` | Post-render quality checks — readability scoring, layout consistency, and accessibility |
+- Defined in `packages/slide-dsl` using TypeScript + Zod
+- Validated before rendering
+- The single source of truth for all generation, revision, and export flows
 
-## Phase 0 Status
+Supported slide types: cover, agenda, insight, comparison, timeline, data_chart, closing, and more.
 
-The project is currently in **Phase 0: Technical Validation**.
+Supported elements: text, image, table, chart, shape, icon, group.
 
-Goal: prove that the full pipeline — from structured Slide DSL JSON through template filling, layout computation, and sidecar rendering — can produce a fully **editable** `.pptx` file with correct text, images, charts, and tables.
+## Themes
 
-Non-goals for this phase: natural language input, multi-slide planning, or polished UI.
+Three themes are implemented in `packages/templates`:
+
+| Theme | Style | Use Case |
+|-------|-------|----------|
+| **Apple Keynote** | Light, large titles, generous whitespace | Product launches, startup pitches |
+| **Bloomberg Dark** | Dark, high contrast, chart-forward | Industry analysis, financial reports |
+| **McKinsey Consulting** | Structured, conclusion-first, high density | Executive reports, strategy decks |
+
+## Development Phases
+
+| Phase | Name | Status |
+|-------|------|--------|
+| 0 | Technical Validation | ✅ Done |
+| 1 | Slide DSL + Templates | ✅ Done |
+| 2 | PPTX Renderer Enhancement | 🔶 Partial |
+| 3 | Desktop UI | 🔶 Partial |
+| 4 | Model Providers | Planned |
+| 5 | Agent Generation | Planned |
+| 6 | Revision System | Planned |
+| 7 | Visual Asset System | Planned |
+| 8 | Document Input | Planned |
+| 9 | Quality Critic | Planned |
+
+See **[AGENTS.md](AGENTS.md)** for the full product specification and phase definitions.
 
 ## Contributing
 
-1. Fork the repository.
-2. Create a feature branch (`git checkout -b feature/my-change`).
-3. Make your changes and commit with clear messages.
-4. Push to your fork and open a Pull Request.
-
-Please ensure your code passes `pnpm lint` and `pnpm test` before submitting.
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/my-change`)
+3. Make your changes with clear commit messages
+4. Push to your fork and open a Pull Request
 
 ## License
 
