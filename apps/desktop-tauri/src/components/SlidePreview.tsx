@@ -255,12 +255,47 @@ function renderSlideLayout(slide: SlideData, theme: DeckTheme) {
   );
 }
 
+const generationSteps = ["理解需求", "规划结构", "生成内容", "优化质量"];
+
+function GenerationProgress({ step }: { step: string }) {
+  const stepBase = step.replace("...", "");
+  const activeIndex = generationSteps.indexOf(stepBase);
+  const isComplete = step === "完成";
+
+  return (
+    <div className="generation-progress">
+      <div className="generation-progress-spinner" />
+      <div className="generation-progress-text">{step}</div>
+      <div className="generation-progress-steps">
+        {generationSteps.map((s, i) => (
+          <span
+            key={s}
+            className={`progress-step ${
+              isComplete || i < activeIndex
+                ? "progress-step-completed"
+                : i === activeIndex
+                  ? "progress-step-active"
+                  : ""
+            }`}
+          >
+            {s}
+            {i < generationSteps.length - 1 && (
+              <span className="progress-step-arrow"> → </span>
+            )}
+          </span>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 export function SlidePreview() {
   const deck = useStore((s) => s.deck);
   const currentSlideIndex = useStore((s) => s.currentSlideIndex);
   const nextSlide = useStore((s) => s.nextSlide);
   const prevSlide = useStore((s) => s.prevSlide);
   const generateFromPrompt = useStore((s) => s.generateFromPrompt);
+  const generationStep = useStore((s) => s.generationStep);
 
   if (!deck) {
     return (
@@ -274,6 +309,7 @@ export function SlidePreview() {
   if (!slide) return null;
 
   const theme = deck.theme;
+  const showProgress = generationStep !== null && generationStep !== "完成";
 
   return (
     <div className="slide-preview">
@@ -283,6 +319,7 @@ export function SlidePreview() {
           style={{ background: theme.colors.background }}
         >
           {renderSlideLayout(slide, theme)}
+          {showProgress && <GenerationProgress step={generationStep} />}
         </div>
       </div>
       <div className="slide-preview-controls">

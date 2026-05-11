@@ -7,6 +7,7 @@ interface AppState {
   currentSlideIndex: number;
   loading: boolean;
   error: string | null;
+  generationStep: string | null;
   commandBarOpen: boolean;
   commandHistory: string[];
   settingsOpen: boolean;
@@ -22,6 +23,7 @@ interface AppState {
   };
 
   setDeck: (deck: DeckData | null) => void;
+  updateSlideContent: (slideIndex: number, elementId: string, content: string) => void;
   setCurrentSlide: (index: number) => void;
   nextSlide: () => void;
   prevSlide: () => void;
@@ -42,6 +44,7 @@ export const useStore = create<AppState>((set, get) => ({
   currentSlideIndex: 0,
   loading: false,
   error: null,
+  generationStep: null,
   commandBarOpen: false,
   commandHistory: [],
   settingsOpen: false,
@@ -57,6 +60,21 @@ export const useStore = create<AppState>((set, get) => ({
   },
 
   setDeck: (deck) => set({ deck, currentSlideIndex: 0, error: null }),
+
+  updateSlideContent: (slideIndex, elementId, content) => {
+    const { deck } = get();
+    if (!deck) return;
+    const slides = deck.slides.map((slide, i) => {
+      if (i !== slideIndex) return slide;
+      return {
+        ...slide,
+        elements: slide.elements.map((el) =>
+          el.id === elementId ? { ...el, content } : el
+        ),
+      };
+    });
+    set({ deck: { ...deck, slides } });
+  },
 
   setCurrentSlide: (index) => {
     const { deck } = get();
@@ -108,17 +126,18 @@ export const useStore = create<AppState>((set, get) => ({
     })),
 
   generateFromPrompt: async (prompt: string) => {
-    set({ loading: true, error: null });
+    set({ loading: true, error: null, generationStep: "理解需求..." });
     try {
+      set({ generationStep: "生成演示文稿..." });
       const { invoke } = await import("@tauri-apps/api/core");
       const result = await invoke<DeckData>("generate_deck", {
         prompt,
         options: get().providerConfig,
       });
-      set({ deck: result, currentSlideIndex: 0 });
+      set({ deck: result, currentSlideIndex: 0, generationStep: "完成" });
     } catch {
       // Fallback: load sample deck (web dev mode or invoke failed)
-      set({ deck: sampleDeck, currentSlideIndex: 0 });
+      set({ deck: sampleDeck, currentSlideIndex: 0, generationStep: "完成" });
     } finally {
       set({ loading: false });
     }

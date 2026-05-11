@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { useStore } from "../store";
 import type { SlideData, ElementData } from "../types";
 
@@ -61,17 +61,39 @@ function ElementRow({ el }: { el: ElementData }) {
   );
 }
 
-function ContentTab({ slide }: { slide: SlideData }) {
+function ContentTab({
+  slide,
+  slideIndex,
+}: {
+  slide: SlideData;
+  slideIndex: number;
+}) {
   return (
     <div className="inspector-section">
       {slide.elements.map((el) => (
-        <ContentField key={el.id} el={el} />
+        <ContentField key={el.id} el={el} slideIndex={slideIndex} />
       ))}
     </div>
   );
 }
 
-function ContentField({ el }: { el: ElementData }) {
+function ContentField({
+  el,
+  slideIndex,
+}: {
+  el: ElementData;
+  slideIndex: number;
+}) {
+  const updateSlideContent = useStore((s) => s.updateSlideContent);
+  const [localValue, setLocalValue] = useState<string | null>(null);
+
+  const commitValue = useCallback(() => {
+    if (localValue !== null) {
+      updateSlideContent(slideIndex, el.id, localValue);
+      setLocalValue(null);
+    }
+  }, [localValue, slideIndex, el.id, updateSlideContent]);
+
   if (el.type === "table") {
     return (
       <div className="inspector-content-block">
@@ -101,9 +123,16 @@ function ContentField({ el }: { el: ElementData }) {
     <div className="inspector-content-block">
       <label className="inspector-label">{el.role}</label>
       <textarea
-        className="inspector-textarea"
-        value={el.content || ""}
-        readOnly
+        className="inspector-textarea inspector-textarea-editable"
+        value={localValue ?? (el.content || "")}
+        onChange={(e) => setLocalValue(e.target.value)}
+        onBlur={commitValue}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" && !e.shiftKey) {
+            e.preventDefault();
+            commitValue();
+          }
+        }}
         rows={3}
       />
     </div>
@@ -207,7 +236,9 @@ export function Inspector() {
       </div>
       <div className="inspector-content">
         {activeTab === "structure" && <StructureTab slide={slide} />}
-        {activeTab === "content" && <ContentTab slide={slide} />}
+        {activeTab === "content" && (
+          <ContentTab slide={slide} slideIndex={currentSlideIndex} />
+        )}
         {activeTab === "style" && <StyleTab />}
         {activeTab === "notes" && <NotesTab slide={slide} />}
       </div>
