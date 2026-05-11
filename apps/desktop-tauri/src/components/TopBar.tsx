@@ -1,3 +1,4 @@
+import { useState, useRef, useEffect } from "react";
 import { useStore } from "../store";
 
 export function TopBar() {
@@ -6,6 +7,21 @@ export function TopBar() {
   const setDeck = useStore((s) => s.setDeck);
   const toggleSettings = useStore((s) => s.toggleSettings);
   const exportCurrentDeck = useStore((s) => s.exportCurrentDeck);
+
+  const [exportOpen, setExportOpen] = useState(false);
+  const exportRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (exportRef.current && !exportRef.current.contains(e.target as Node)) {
+        setExportOpen(false);
+      }
+    }
+    if (exportOpen) {
+      document.addEventListener("mousedown", handleClickOutside);
+      return () => document.removeEventListener("mousedown", handleClickOutside);
+    }
+  }, [exportOpen]);
 
   return (
     <div className="top-bar">
@@ -27,20 +43,40 @@ export function TopBar() {
             >
               New Deck
             </button>
-            <button
-              className="top-bar-btn top-bar-btn-accent"
-              onClick={exportCurrentDeck}
-              disabled={loading}
-              title="Export as PPTX (Ctrl+E)"
-            >
-              {loading ? "Exporting..." : "Export PPTX"}
-            </button>
-            <button className="top-bar-btn" disabled title="Coming soon">
-              PDF
-            </button>
-            <button className="top-bar-btn" disabled title="Coming soon">
-              HTML
-            </button>
+            <div className="export-dropdown" ref={exportRef}>
+              <button
+                className="top-bar-btn top-bar-btn-accent"
+                onClick={() => setExportOpen(!exportOpen)}
+                disabled={loading}
+                title="Export"
+              >
+                {loading ? "Exporting..." : "Export"}
+              </button>
+              {exportOpen && (
+                <div className="export-menu">
+                  <button
+                    className="export-menu-item"
+                    onClick={() => {
+                      exportCurrentDeck("pptx");
+                      setExportOpen(false);
+                    }}
+                  >
+                    <span className="export-format">PPTX</span>
+                    <span className="export-desc">Editable PowerPoint</span>
+                  </button>
+                  <button
+                    className="export-menu-item"
+                    onClick={() => {
+                      exportCurrentDeck("pdf");
+                      setExportOpen(false);
+                    }}
+                  >
+                    <span className="export-format">PDF</span>
+                    <span className="export-desc">Portable Document</span>
+                  </button>
+                </div>
+              )}
+            </div>
           </>
         ) : (
           <button

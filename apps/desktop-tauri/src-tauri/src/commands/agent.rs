@@ -255,6 +255,93 @@ pub fn export_pptx(
 }
 
 #[tauri::command]
+pub fn export_pdf(
+    app: tauri::AppHandle,
+    deck_json: serde_json::Value,
+) -> Result<serde_json::Value, String> {
+    let output_dir = app
+        .path()
+        .app_data_dir()
+        .map_err(|e| format!("Failed to get app data dir: {}", e))?;
+    std::fs::create_dir_all(&output_dir)
+        .map_err(|e| format!("Failed to create output dir: {}", e))?;
+
+    let deck_path = output_dir.join("current-deck.json");
+    let output_path = output_dir.join("output.pdf");
+
+    let deck_str =
+        serde_json::to_string_pretty(&deck_json).map_err(|e| format!("Failed to serialize deck: {}", e))?;
+    std::fs::write(&deck_path, deck_str)
+        .map_err(|e| format!("Failed to write deck file: {}", e))?;
+
+    let resource_dir = app
+        .path()
+        .resource_dir()
+        .map_err(|e| format!("Failed to get resource dir: {}", e))?;
+
+    let sidecar_js = resource_dir
+        .join("sidecars")
+        .join("node-renderer")
+        .join("dist")
+        .join("index.js");
+
+    let request = JsonRpcRequest {
+        id: "export_pdf_001".to_string(),
+        method: "render.pdf".to_string(),
+        params: serde_json::json!({
+            "deckPath": deck_path.to_string_lossy(),
+            "outputPath": output_path.to_string_lossy(),
+        }),
+    };
+
+    let request_str =
+        serde_json::to_string(&request).map_err(|e| format!("Failed to serialize: {}", e))?;
+
+    let mut child = Command::new("node")
+        .arg(&sidecar_js)
+        .stdin(Stdio::piped())
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped())
+        .spawn()
+        .map_err(|e| format!("Failed to start renderer: {}", e))?;
+
+    if let Some(ref mut stdin) = child.stdin {
+        stdin
+            .write_all(request_str.as_bytes())
+            .map_err(|e| format!("Failed to write to stdin: {}", e))?;
+        stdin
+            .write_all(b"\n")
+            .map_err(|e| format!("Failed to write newline: {}", e))?;
+    }
+    drop(child.stdin.take());
+
+    let output = child
+        .wait_with_output()
+        .map_err(|e| format!("Failed to wait for renderer: {}", e))?;
+
+    if !output.status.success() {
+        let stderr = String::from_utf8_lossy(&output.stderr);
+        return Err(format!("Renderer error: {}", stderr));
+    }
+
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    let response: JsonRpcResponse = serde_json::from_str(stdout.trim())
+        .map_err(|e| format!("Invalid renderer response: {} (raw: {})", e, stdout))?;
+
+    if let Some(error) = response.error {
+        return Err(format!("Renderer error {}: {}", error.code, error.message));
+    }
+
+    let mut result = response
+        .result
+        .ok_or_else(|| "No result from renderer".to_string())?;
+
+    result["outputPath"] = serde_json::json!(output_path.to_string_lossy());
+
+    Ok(result)
+}
+
+#[tauri::command]
 pub fn check_provider(
     app: tauri::AppHandle,
     name: String,

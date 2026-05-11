@@ -128,6 +128,53 @@ body {
   background: #3b5ce6;
 }
 
+.export-dropdown {
+  position: relative;
+}
+
+.export-menu {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  margin-top: 4px;
+  background: #1a2740;
+  border: 1px solid #2a2a4a;
+  border-radius: 8px;
+  overflow: hidden;
+  min-width: 180px;
+  z-index: 100;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+}
+
+.export-menu-item {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  width: 100%;
+  padding: 10px 14px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  text-align: left;
+  font-family: inherit;
+  transition: background 0.1s ease;
+}
+
+.export-menu-item:hover {
+  background: rgba(74, 108, 247, 0.15);
+}
+
+.export-format {
+  font-size: 13px;
+  font-weight: 600;
+  color: #e0e0e0;
+}
+
+.export-desc {
+  font-size: 11px;
+  color: #888;
+}
+
 /* ── Workspace (3-panel) ── */
 
 .workspace {

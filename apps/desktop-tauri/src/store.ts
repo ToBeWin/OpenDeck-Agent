@@ -36,7 +36,7 @@ interface AppState {
   updateProviderConfig: (config: Partial<AppState["providerConfig"]>) => void;
   generateFromPrompt: (prompt: string) => Promise<void>;
   modifyFromCommand: (command: string) => Promise<void>;
-  exportCurrentDeck: () => Promise<void>;
+  exportCurrentDeck: (format?: "pptx" | "pdf") => Promise<void>;
 }
 
 export const useStore = create<AppState>((set, get) => ({
@@ -174,7 +174,7 @@ export const useStore = create<AppState>((set, get) => ({
     }
   },
 
-  exportCurrentDeck: async () => {
+  exportCurrentDeck: async (format: "pptx" | "pdf" = "pptx") => {
     const { deck } = get();
     if (!deck) {
       set({ error: "No deck to export" });
@@ -182,9 +182,14 @@ export const useStore = create<AppState>((set, get) => ({
     }
     set({ loading: true, error: null });
     try {
-      const { invoke } = await import("@tauri-apps/api/core");
       const deckJson = JSON.stringify(deck);
-      await invoke("export_pptx", { deckJson });
+      if (format === "pdf") {
+        const { exportPdf } = await import("./lib/tauri");
+        await exportPdf(deckJson);
+      } else {
+        const { exportPptx } = await import("./lib/tauri");
+        await exportPptx(deckJson);
+      }
     } catch (e) {
       set({ error: String(e) });
     } finally {

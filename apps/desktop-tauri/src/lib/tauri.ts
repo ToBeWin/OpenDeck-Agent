@@ -54,6 +54,10 @@ export async function exportPptx(deckJson: unknown): Promise<RenderResult> {
   return invoke("export_pptx", { deckJson });
 }
 
+export async function exportPdf(deckJson: unknown): Promise<RenderResult> {
+  return invoke("export_pdf", { deckJson });
+}
+
 export async function checkProvider(name: string): Promise<ProviderStatus> {
   return invoke("check_provider", { name });
 }

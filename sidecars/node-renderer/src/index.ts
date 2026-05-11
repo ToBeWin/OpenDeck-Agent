@@ -1,5 +1,6 @@
 import * as readline from "readline";
 import { renderPptx } from "./renderer";
+import { renderPdf } from "./pdf-renderer";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -76,6 +77,31 @@ async function handleRenderPptx(
   }
 }
 
+async function handleRenderPdf(
+  id: string,
+  params: Record<string, unknown>
+): Promise<void> {
+  const deckPath = params.deckPath as string | undefined;
+  const outputPath = params.outputPath as string | undefined;
+
+  if (!deckPath) {
+    writeResponse(errorResponse(id, -32602, "Missing required param: deckPath"));
+    return;
+  }
+  if (!outputPath) {
+    writeResponse(errorResponse(id, -32602, "Missing required param: outputPath"));
+    return;
+  }
+
+  try {
+    const result = await renderPdf(deckPath, outputPath);
+    writeResponse(successResponse(id, result));
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : String(err);
+    writeResponse(errorResponse(id, -32000, `PDF render failed: ${message}`));
+  }
+}
+
 // ---------------------------------------------------------------------------
 // Request dispatcher
 // ---------------------------------------------------------------------------
@@ -89,6 +115,9 @@ async function dispatch(request: JsonRpcRequest): Promise<void> {
       break;
     case "render.pptx":
       await handleRenderPptx(id, params || {});
+      break;
+    case "render.pdf":
+      await handleRenderPdf(id, params || {});
       break;
     default:
       writeResponse(errorResponse(id, -32601, `Method not found: ${method}`));
