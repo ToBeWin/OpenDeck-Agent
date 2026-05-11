@@ -1,0 +1,11 @@
+{
+  "name": "@opendeck/document-parsers",
+  "version": "0.1.0",
+  "private": true,
+  "main": "src/index.ts",
+  "scripts": { "test": "vitest run" },
+  "devDependencies": {
+    "typescript": "^5.4.0",
+    "vitest": "^2.0.0"
+  }
+}

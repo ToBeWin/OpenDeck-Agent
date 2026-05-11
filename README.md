@@ -27,16 +27,18 @@ OpenDeck-Agent/
 ├── packages/
 │   ├── slide-dsl/             # ✅ Slide DSL schema (Zod), types, validator
 │   ├── templates/             # ✅ 3 themes: Apple Keynote, Bloomberg Dark, McKinsey
-│   ├── agent-core/            # Agent orchestration (placeholder)
-│   ├── model-providers/       # LLM provider abstraction (placeholder)
-│   ├── image-providers/       # Image source adapters (placeholder)
-│   ├── visual-planner/        # Visual planning (placeholder)
-│   ├── asset-manager/         # Asset resolution (placeholder)
-│   ├── layout-engine/         # Layout computation (placeholder)
-│   ├── render-pptx/           # PPTX rendering logic (placeholder)
-│   └── quality/               # Quality scoring (placeholder)
+│   ├── agent-core/            # ✅ Agent pipeline: intent → plan → slide DSL
+│   ├── model-providers/       # ✅ LLM providers: Ollama, OpenAI-compat, mock
+│   ├── image-providers/       # ✅ Image generation: OpenAI DALL-E, mock
+│   ├── visual-planner/        # ✅ Visual element suggestions per slide
+│   ├── asset-manager/         # ✅ Asset caching, registration, querying
+│   ├── layout-engine/         # ✅ Grid-based layout with 5 rule types
+│   ├── render-pptx/           # ✅ Sidecar client for PPTX rendering
+│   ├── revision/              # ✅ Revision actions, parser, undo/redo history
+│   ├── document-parsers/      # ✅ Markdown & plain text → slide outlines
+│   └── quality/               # ✅ Quality scoring: content, visual, editability
 ├── sidecars/
-│   └── node-renderer/         # ✅ JSON-RPC sidecar — 8 slide layouts, theme-aware
+│   └── node-renderer/         # ✅ JSON-RPC sidecar — 16+ layouts, theme-aware
 ├── examples/
 │   └── decks/                 # ✅ Sample 8-slide deck (Chinese AI industry analysis)
 ├── docs/                      # Protocol specs, architecture docs, plans
@@ -90,8 +92,11 @@ echo '{"id":"2","method":"render.pptx","params":{"deckPath":"examples/decks/samp
 ### Run Tests
 
 ```bash
+pnpm test                                 # Run all package tests (155 tests)
 pnpm --filter @opendeck/slide-dsl test    # Schema validation tests
 pnpm --filter @opendeck/templates test    # Theme tests
+pnpm --filter @opendeck/agent-core test   # Agent pipeline tests
+pnpm --filter @opendeck/revision test     # Revision system tests
 ```
 
 ## Architecture
@@ -149,14 +154,14 @@ Three themes are implemented in `packages/templates`:
 |-------|------|--------|
 | 0 | Technical Validation | ✅ Done |
 | 1 | Slide DSL + Templates | ✅ Done |
-| 2 | PPTX Renderer Enhancement | 🔶 Partial |
-| 3 | Desktop UI | 🔶 Partial |
-| 4 | Model Providers | Planned |
-| 5 | Agent Generation | Planned |
-| 6 | Revision System | Planned |
-| 7 | Visual Asset System | Planned |
-| 8 | Document Input | Planned |
-| 9 | Quality Critic | Planned |
+| 2 | PPTX Renderer Enhancement | ✅ Done (16+ layouts) |
+| 3 | Desktop UI | ✅ Done (3-panel layout) |
+| 4 | Model Providers | ✅ Done (Ollama, OpenAI, mock) |
+| 5 | Agent Generation | ✅ Done (pipeline, planner, architect) |
+| 6 | Revision System | ✅ Done (actions, parser, undo/redo) |
+| 7 | Visual Asset System | ✅ Done (assets, image providers) |
+| 8 | Document Input | ✅ Done (Markdown, text parsers) |
+| 9 | Quality Critic | ✅ Done (scoring, 155 tests) |
 
 See **[AGENTS.md](AGENTS.md)** for the full product specification and phase definitions.
 

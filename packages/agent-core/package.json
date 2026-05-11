@@ -3,5 +3,17 @@
   "version": "0.1.0",
   "private": true,
   "main": "src/index.ts",
-  "scripts": {}
+  "scripts": {
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@opendeck/slide-dsl": "workspace:*",
+    "@opendeck/model-providers": "workspace:*",
+    "@opendeck/templates": "workspace:*",
+    "zod": "^3.23.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.4.0",
+    "vitest": "^2.0.0"
+  }
 }
