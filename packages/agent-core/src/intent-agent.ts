@@ -46,7 +46,7 @@ export async function parseIntent(
   return {
     intent: result.intent,
     confidence: result.confidence,
-    parameters: result.parameters,
+    parameters: result.parameters ?? {},
     rawMessage: userMessage,
   };
 }

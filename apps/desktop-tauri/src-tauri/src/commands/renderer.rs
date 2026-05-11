@@ -1,6 +1,7 @@
 use serde::{Deserialize, Serialize};
-use std::io::{BufRead, BufReader, Write};
+use std::io::Write;
 use std::process::{Command, Stdio};
+use tauri::Manager;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct RenderStats {

@@ -1,0 +1,21 @@
+{
+  "name": "@opendeck/agent-sidecar",
+  "version": "0.1.0",
+  "private": true,
+  "main": "src/index.ts",
+  "scripts": {
+    "start": "tsx src/index.ts",
+    "build": "tsc"
+  },
+  "dependencies": {
+    "@opendeck/agent-core": "workspace:*",
+    "@opendeck/model-providers": "workspace:*",
+    "@opendeck/revision": "workspace:*",
+    "@opendeck/slide-dsl": "workspace:*",
+    "tsx": "^4.0.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.4.0",
+    "@types/node": "^20.0.0"
+  }
+}

@@ -205,14 +205,10 @@ export const iconElementSchema = z.object({
   position: boxSchema.optional(),
 });
 
-export const groupElementSchema: z.ZodType<{
-  id: string;
-  type: "group";
-  children: z.infer<typeof slideElementSchema>[];
-}> = z.object({
+export const groupElementSchema = z.object({
   id: z.string(),
   type: z.literal("group"),
-  children: z.lazy(() => z.array(slideElementSchema)),
+  children: z.array(z.any()),
 });
 
 export const slideElementSchema = z.discriminatedUnion("type", [

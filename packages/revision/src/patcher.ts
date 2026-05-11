@@ -81,7 +81,7 @@ function applyOne(deck: Deck, action: RevisionAction): RevisionResult {
       }
       const slide = deck.slides[index];
       for (const [key, value] of Object.entries(patch)) {
-        (slide as Record<string, unknown>)[key] = value;
+        (slide as unknown as Record<string, unknown>)[key] = value;
       }
       return okResult(deck);
     }
@@ -133,7 +133,7 @@ function applyOne(deck: Deck, action: RevisionAction): RevisionResult {
         ]);
       }
       for (const [key, value] of Object.entries(patch)) {
-        (el as Record<string, unknown>)[key] = value;
+        (el as unknown as Record<string, unknown>)[key] = value;
       }
       return okResult(deck);
     }

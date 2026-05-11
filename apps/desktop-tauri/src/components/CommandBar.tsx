@@ -5,7 +5,8 @@ export function CommandBar() {
   const commandBarOpen = useStore((s) => s.commandBarOpen);
   const toggleCommandBar = useStore((s) => s.toggleCommandBar);
   const commandHistory = useStore((s) => s.commandHistory);
-  const addCommand = useStore((s) => s.addCommand);
+  const loading = useStore((s) => s.loading);
+  const modifyFromCommand = useStore((s) => s.modifyFromCommand);
   const [value, setValue] = useState("");
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -33,7 +34,7 @@ export function CommandBar() {
     e.preventDefault();
     const trimmed = value.trim();
     if (trimmed) {
-      addCommand(trimmed);
+      modifyFromCommand(trimmed);
       setValue("");
     }
   }
@@ -62,8 +63,16 @@ export function CommandBar() {
                 value={value}
                 onChange={(e) => setValue(e.target.value)}
               />
-              <button className="command-bar-submit" type="submit">
-                Send
+              <button
+                className="command-bar-submit"
+                type="submit"
+                disabled={loading}
+              >
+                {loading ? (
+                  <span className="loading-spinner" />
+                ) : (
+                  "Send"
+                )}
               </button>
             </form>
             {commandHistory.length > 0 && (

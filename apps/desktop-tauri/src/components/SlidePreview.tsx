@@ -1,4 +1,5 @@
 import { useStore } from "../store";
+import { WelcomeView } from "./WelcomeView";
 import type { SlideData, ElementData, DeckTheme } from "../types";
 
 function BarChart({ data, colors }: { data: ElementData; colors: DeckTheme["colors"] }) {
@@ -259,14 +260,12 @@ export function SlidePreview() {
   const currentSlideIndex = useStore((s) => s.currentSlideIndex);
   const nextSlide = useStore((s) => s.nextSlide);
   const prevSlide = useStore((s) => s.prevSlide);
+  const generateFromPrompt = useStore((s) => s.generateFromPrompt);
 
   if (!deck) {
     return (
-      <div className="slide-preview-empty">
-        <div className="slide-preview-empty-inner">
-          <span className="empty-icon">OD</span>
-          <p>Load a deck to begin editing</p>
-        </div>
+      <div className="slide-preview">
+        <WelcomeView onGenerate={generateFromPrompt} />
       </div>
     );
   }

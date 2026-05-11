@@ -3,8 +3,9 @@ import { useStore } from "../store";
 export function TopBar() {
   const deck = useStore((s) => s.deck);
   const loading = useStore((s) => s.loading);
-  const loadSampleDeck = useStore((s) => s.loadSampleDeck);
-  const generatePptx = useStore((s) => s.generatePptx);
+  const setDeck = useStore((s) => s.setDeck);
+  const toggleSettings = useStore((s) => s.toggleSettings);
+  const exportCurrentDeck = useStore((s) => s.exportCurrentDeck);
 
   return (
     <div className="top-bar">
@@ -16,18 +17,21 @@ export function TopBar() {
         {deck && <span className="top-bar-title">{deck.title}</span>}
       </div>
       <div className="top-bar-right">
-        {!deck && (
-          <button className="top-bar-btn" onClick={loadSampleDeck}>
-            Load Sample Deck
-          </button>
-        )}
-        {deck && (
+        {deck ? (
           <>
             <span className="top-bar-theme">{deck.theme.name}</span>
             <button
+              className="top-bar-btn"
+              onClick={() => setDeck(null)}
+              title="New Deck (Ctrl+N)"
+            >
+              New Deck
+            </button>
+            <button
               className="top-bar-btn top-bar-btn-accent"
-              onClick={generatePptx}
+              onClick={exportCurrentDeck}
               disabled={loading}
+              title="Export as PPTX (Ctrl+E)"
             >
               {loading ? "Exporting..." : "Export PPTX"}
             </button>
@@ -38,6 +42,23 @@ export function TopBar() {
               HTML
             </button>
           </>
+        ) : (
+          <button
+            className="top-bar-btn"
+            onClick={toggleSettings}
+            title="Settings (Ctrl+,)"
+          >
+            &#9881;
+          </button>
+        )}
+        {deck && (
+          <button
+            className="top-bar-btn"
+            onClick={toggleSettings}
+            title="Settings (Ctrl+,)"
+          >
+            &#9881;
+          </button>
         )}
       </div>
     </div>

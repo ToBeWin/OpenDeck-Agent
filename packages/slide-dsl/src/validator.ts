@@ -10,7 +10,7 @@ export interface ValidationResult {
 export function validateDeck(data: unknown): ValidationResult {
   const result = deckSchema.safeParse(data);
   if (result.success) {
-    return { valid: true, errors: [], deck: result.data };
+    return { valid: true, errors: [], deck: result.data as unknown as Deck };
   }
   return {
     valid: false,

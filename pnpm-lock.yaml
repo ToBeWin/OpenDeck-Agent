@@ -196,6 +196,31 @@ importers:
         specifier: ^2.0.0
         version: 2.1.9(@types/node@20.19.40)
 
+  sidecars/agent-sidecar:
+    dependencies:
+      '@opendeck/agent-core':
+        specifier: workspace:*
+        version: link:../../packages/agent-core
+      '@opendeck/model-providers':
+        specifier: workspace:*
+        version: link:../../packages/model-providers
+      '@opendeck/revision':
+        specifier: workspace:*
+        version: link:../../packages/revision
+      '@opendeck/slide-dsl':
+        specifier: workspace:*
+        version: link:../../packages/slide-dsl
+      tsx:
+        specifier: ^4.0.0
+        version: 4.21.0
+    devDependencies:
+      '@types/node':
+        specifier: ^20.0.0
+        version: 20.19.40
+      typescript:
+        specifier: ^5.4.0
+        version: 5.8.3
+
   sidecars/node-renderer:
     dependencies:
       pptxgenjs:
