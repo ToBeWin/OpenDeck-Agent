@@ -245,7 +245,121 @@ function renderSlideLayout(slide: SlideData, theme: DeckTheme) {
     );
   }
 
-  // Default: title_content, timeline_horizontal, quote_focus, etc.
+  if (layout === "process_flow") {
+    const title = elements.find((el) => el.role === "title");
+    const steps = elements.filter((el) => el.role === "body");
+    return (
+      <div className="slide-layout-process">
+        {title && <SlideElement el={title} theme={theme} layout={layout} />}
+        <div className="process-steps">
+          {steps.map((step, i) => (
+            <div key={step.id} className="process-step">
+              <div className="process-step-number" style={{ background: theme.colors.accent }}>
+                {i + 1}
+              </div>
+              <SlideElement el={step} theme={theme} layout={layout} />
+              {i < steps.length - 1 && (
+                <div className="process-step-arrow">→</div>
+              )}
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  if (layout === "timeline_horizontal" || layout === "timeline_vertical") {
+    const title = elements.find((el) => el.role === "title");
+    const items = elements.filter((el) => el.role === "body");
+    return (
+      <div className={`slide-layout-timeline ${layout === "timeline_vertical" ? "timeline-vertical" : ""}`}>
+        {title && <SlideElement el={title} theme={theme} layout={layout} />}
+        <div className="timeline-items">
+          {items.map((item) => (
+            <div key={item.id} className="timeline-item">
+              <div className="timeline-dot" style={{ background: theme.colors.accent }} />
+              <div className="timeline-line" style={{ background: theme.colors.border }} />
+              <SlideElement el={item} theme={theme} layout={layout} />
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  if (layout === "quote_focus" || layout === "quote") {
+    const quote = elements.find((el) => el.type === "text");
+    const attribution = elements.find((el) => el.role === "subtitle" || el.role === "caption");
+    return (
+      <div className="slide-layout-quote">
+        <div className="quote-mark" style={{ color: theme.colors.accent }}>"</div>
+        {quote && <SlideElement el={quote} theme={theme} layout={layout} />}
+        {attribution && (
+          <p className="quote-attribution" style={{ color: theme.colors.textSecondary }}>
+            — {attribution.content}
+          </p>
+        )}
+      </div>
+    );
+  }
+
+  if (layout === "section_divider") {
+    const title = elements.find((el) => el.role === "title");
+    const subtitle = elements.find((el) => el.role === "subtitle");
+    return (
+      <div className="slide-layout-section-divider">
+        <div className="section-divider-line" style={{ background: theme.colors.accent }} />
+        {title && <SlideElement el={title} theme={theme} layout={layout} />}
+        {subtitle && <SlideElement el={subtitle} theme={theme} layout={layout} />}
+        <div className="section-divider-line" style={{ background: theme.colors.accent }} />
+      </div>
+    );
+  }
+
+  if (layout === "grid_cards") {
+    const title = elements.find((el) => el.role === "title");
+    const cards = elements.filter((el) => el.role === "body");
+    return (
+      <div className="slide-layout-grid">
+        {title && <SlideElement el={title} theme={theme} layout={layout} />}
+        <div className="grid-cards">
+          {cards.map((card) => (
+            <div key={card.id} className="grid-card" style={{
+              background: theme.colors.surface,
+              borderColor: theme.colors.border,
+            }}>
+              <SlideElement el={card} theme={theme} layout={layout} />
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  if (layout === "problem" || layout === "solution") {
+    const title = elements.find((el) => el.role === "title");
+    const items = elements.filter((el) => el.role === "body");
+    const icon = layout === "problem" ? "⚠" : "✓";
+    return (
+      <div className={`slide-layout-${layout}`}>
+        {title && <SlideElement el={title} theme={theme} layout={layout} />}
+        <div className={`${layout}-items`}>
+          {items.map((item) => (
+            <div key={item.id} className={`${layout}-item`} style={{
+              borderColor: layout === "problem" ? theme.colors.warning : theme.colors.success,
+            }}>
+              <span className={`${layout}-icon`} style={{
+                color: layout === "problem" ? theme.colors.warning : theme.colors.success,
+              }}>{icon}</span>
+              <SlideElement el={item} theme={theme} layout={layout} />
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  // Default: title_content, consulting_summary, case_study, etc.
   return (
     <div className="slide-layout-default">
       {elements.map((el) => (
