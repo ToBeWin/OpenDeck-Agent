@@ -1,16 +1,22 @@
-import { GeneratePanel } from "./components/GeneratePanel";
+import { TopBar } from "./components/TopBar";
+import { DeckOutline } from "./components/DeckOutline";
+import { SlidePreview } from "./components/SlidePreview";
+import { Inspector } from "./components/Inspector";
+import { CommandBar } from "./components/CommandBar";
+import { StatusBar } from "./components/StatusBar";
 import "./App.css";
 
 function App() {
   return (
     <div className="app">
-      <header className="header">
-        <h1>OpenDeck Agent</h1>
-        <p className="subtitle">AI-Powered Presentation Generator</p>
-      </header>
-      <main className="main">
-        <GeneratePanel />
-      </main>
+      <TopBar />
+      <div className="workspace">
+        <DeckOutline />
+        <SlidePreview />
+        <Inspector />
+      </div>
+      <CommandBar />
+      <StatusBar />
     </div>
   );
 }
