@@ -1,2 +1,3 @@
-// @opendeck/slide-dsl — placeholder
-export {};
+export * from "./types";
+export * from "./schemas";
+export * from "./validator";
