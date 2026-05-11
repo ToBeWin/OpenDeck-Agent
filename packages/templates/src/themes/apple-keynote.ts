@@ -1,0 +1,58 @@
+import type { ThemeSpec } from "../types";
+
+export const appleKeynoteTheme: ThemeSpec = {
+  id: "theme_apple_keynote",
+  name: "Apple Keynote",
+  style: "apple_keynote",
+  colors: {
+    primary: "#0071E3",
+    secondary: "#86868B",
+    accent: "#FF9500",
+    background: "#FFFFFF",
+    surface: "#F5F5F7",
+    textPrimary: "#1D1D1F",
+    textSecondary: "#86868B",
+    textInverse: "#FFFFFF",
+    border: "#D2D2D7",
+    success: "#34C759",
+    warning: "#FF9F0A",
+    error: "#FF3B30",
+    chartColors: ["#0071E3", "#FF9500", "#34C759", "#FF3B30", "#AF52DE", "#5856D6"],
+  },
+  typography: {
+    titleFont: "SF Pro Display",
+    bodyFont: "SF Pro Text",
+    monoFont: "SF Mono",
+    titleSize: 44,
+    subtitleSize: 24,
+    bodySize: 18,
+    captionSize: 14,
+    titleWeight: "bold",
+    bodyWeight: "normal",
+    lineHeight: 1.4,
+  },
+  spacing: {
+    slidePaddingX: 1.2,
+    slidePaddingY: 0.8,
+    elementGap: 0.4,
+    sectionGap: 0.8,
+  },
+  shapes: {
+    cornerRadius: 12,
+    lineWidth: 1,
+    lineColor: "#D2D2D7",
+  },
+  chart: {
+    axisColor: "#86868B",
+    gridColor: "#E5E5EA",
+    labelColor: "#1D1D1F",
+    fontFamily: "SF Pro Text",
+  },
+  image: {
+    borderRadius: 12,
+    overlayOpacity: 0.3,
+    overlayColor: "#000000",
+  },
+  density: "low",
+  defaultVisualIntensity: "high",
+};
