@@ -88,6 +88,8 @@ export interface ElementData {
   chartType?: string;
   data?: ChartData;
   style?: Record<string, unknown>;
+  source?: string;
+  generationPrompt?: string;
 }
 
 export interface SlideData {

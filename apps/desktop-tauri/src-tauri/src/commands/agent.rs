@@ -259,6 +259,30 @@ pub fn check_provider(
 }
 
 #[tauri::command]
+pub fn generate_image(
+    app: tauri::AppHandle,
+    prompt: String,
+    image_provider: Option<String>,
+    api_key: Option<String>,
+    model: Option<String>,
+    width: Option<u32>,
+    height: Option<u32>,
+    style: Option<String>,
+) -> Result<serde_json::Value, String> {
+    let mut params = serde_json::json!({
+        "prompt": prompt,
+    });
+    if let Some(p) = image_provider { params["imageProvider"] = serde_json::json!(p); }
+    if let Some(k) = api_key { params["apiKey"] = serde_json::json!(k); }
+    if let Some(m) = model { params["model"] = serde_json::json!(m); }
+    if let Some(w) = width { params["width"] = serde_json::json!(w); }
+    if let Some(h) = height { params["height"] = serde_json::json!(h); }
+    if let Some(s) = style { params["style"] = serde_json::json!(s); }
+
+    call_agent_sidecar(&app, "agent.generateImage", params)
+}
+
+#[tauri::command]
 pub fn list_providers(app: tauri::AppHandle) -> Result<ProviderList, String> {
     let result = call_agent_sidecar(&app, "agent.listProviders", serde_json::json!({}))?;
     let list: ProviderList =

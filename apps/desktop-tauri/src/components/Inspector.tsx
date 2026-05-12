@@ -3,6 +3,7 @@ import { useTranslation } from "react-i18next";
 import { useStore } from "../store";
 import type { SlideData, ElementData } from "../types";
 import { QualityTab } from "./QualityTab";
+import { ImagePanel } from "./ImagePanel";
 
 type TabId = "structure" | "content" | "style" | "layout" | "theme" | "notes" | "quality";
 
@@ -491,7 +492,13 @@ export function Inspector() {
         ))}
       </div>
       <div className="inspector-content">
-        {activeTab === "structure" && <StructureTab slide={slide} />}
+        {activeTab === "structure" && (
+          <>
+            <StructureTab slide={slide} />
+            <div className="inspector-divider" />
+            <ImagePanel slide={slide} slideIndex={currentSlideIndex} />
+          </>
+        )}
         {activeTab === "content" && (
           <ContentTab slide={slide} slideIndex={currentSlideIndex} />
         )}

@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import type { DeckData } from "./types";
+import type { DeckData, ElementData } from "./types";
 
 interface AppState {
   deck: DeckData | null;
@@ -85,6 +85,7 @@ interface AppState {
   saveProject: () => Promise<void>;
   loadProject: () => Promise<void>;
   newProject: () => void;
+  generateImageForSlide: (slideIndex: number, prompt: string) => Promise<void>;
 }
 
 export const useStore = create<AppState>((set, get) => ({
@@ -466,5 +467,44 @@ export const useStore = create<AppState>((set, get) => ({
       future: [],
       error: null,
     });
+  },
+
+  generateImageForSlide: async (slideIndex, prompt) => {
+    const { deck, providerConfig } = get();
+    if (!deck || !deck.slides[slideIndex]) return;
+    set({ loading: true, error: null });
+    try {
+      const { generateImage } = await import("./lib/tauri");
+      const result = await generateImage({
+        prompt,
+        apiKey: providerConfig.openaiApiKey,
+        imageProvider: providerConfig.openaiApiKey ? "openai" : "mock",
+        width: 1024,
+        height: 1024,
+      });
+
+      const newEl: ElementData = {
+        id: `img_${Date.now()}`,
+        type: "image",
+        role: "hero",
+        source: result.base64 || result.url,
+        generationPrompt: prompt,
+      };
+
+      const slides = deck.slides.map((slide, i) => {
+        if (i !== slideIndex) return slide;
+        return { ...slide, elements: [...slide.elements, newEl] };
+      });
+
+      set({
+        deck: { ...deck, slides },
+        history: [...get().history, deck].slice(-50),
+        future: [],
+        dirty: true,
+        loading: false,
+      });
+    } catch (e) {
+      set({ error: String(e), loading: false });
+    }
   },
 }));

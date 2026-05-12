@@ -4,6 +4,7 @@ import {
   handleModify,
   handleCheckProvider,
   handleListProviders,
+  handleGenerateImage,
 } from "./handlers";
 
 // ---------------------------------------------------------------------------
@@ -104,6 +105,19 @@ async function handleListProvidersRpc(id: string): Promise<void> {
   }
 }
 
+async function handleGenerateImageRpc(
+  id: string,
+  params: Record<string, unknown>
+): Promise<void> {
+  try {
+    const result = await handleGenerateImage(params);
+    writeResponse(successResponse(id, result));
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : String(err);
+    writeResponse(errorResponse(id, -32000, message));
+  }
+}
+
 // ---------------------------------------------------------------------------
 // Request dispatcher
 // ---------------------------------------------------------------------------
@@ -126,6 +140,9 @@ async function dispatch(request: JsonRpcRequest): Promise<void> {
       break;
     case "agent.listProviders":
       await handleListProvidersRpc(id);
+      break;
+    case "agent.generateImage":
+      await handleGenerateImageRpc(id, params || {});
       break;
     default:
       writeResponse(errorResponse(id, -32601, `Method not found: ${method}`));

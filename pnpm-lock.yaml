@@ -231,6 +231,9 @@ importers:
       '@opendeck/agent-core':
         specifier: workspace:*
         version: link:../../packages/agent-core
+      '@opendeck/image-providers':
+        specifier: workspace:*
+        version: link:../../packages/image-providers
       '@opendeck/model-providers':
         specifier: workspace:*
         version: link:../../packages/model-providers

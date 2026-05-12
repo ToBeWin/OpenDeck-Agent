@@ -96,3 +96,24 @@ export async function listProjects(): Promise<
 export async function deleteProject(path: string): Promise<void> {
   return invoke("delete_project", { path });
 }
+
+// ── Image Generation ──
+
+export interface ImageGenResult {
+  base64?: string;
+  url?: string;
+  revisedPrompt?: string;
+  metadata: { width: number; height: number; format: string };
+}
+
+export async function generateImage(params: {
+  prompt: string;
+  imageProvider?: string;
+  apiKey?: string;
+  model?: string;
+  width?: number;
+  height?: number;
+  style?: string;
+}): Promise<ImageGenResult> {
+  return invoke("generate_image", params);
+}

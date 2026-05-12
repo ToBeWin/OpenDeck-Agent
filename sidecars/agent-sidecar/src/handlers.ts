@@ -1,4 +1,6 @@
 import { generateDeck } from "@opendeck/agent-core";
+import { OpenAIImageProvider, MockImageProvider } from "@opendeck/image-providers";
+import type { ImageGenerationResult } from "@opendeck/image-providers";
 import {
   registerProvider,
   getProvider,
@@ -412,4 +414,46 @@ export async function handleCheckProvider(
 export async function handleListProviders(): Promise<unknown> {
   const providers = listRegisteredProviders();
   return { providers: providers.map((p) => p.id) };
+}
+
+// ── Image Generation ──
+
+export async function handleGenerateImage(
+  params: Record<string, unknown>
+): Promise<unknown> {
+  const prompt = params.prompt as string;
+  if (!prompt) throw new Error("Missing required param: prompt");
+
+  const provider = (params.imageProvider as string) || "openai";
+  const apiKey = (params.apiKey as string) || "";
+  const model = params.model as string | undefined;
+  const width = (params.width as number) || 1024;
+  const height = (params.height as number) || 1024;
+  const style = params.style as string | undefined;
+
+  let result: ImageGenerationResult;
+
+  if (provider === "mock") {
+    const mock = new MockImageProvider();
+    result = await mock.generate({ prompt, width, height });
+  } else {
+    if (!apiKey) throw new Error("API key required for image generation");
+    const openai = new OpenAIImageProvider({
+      apiKey,
+      model: model ?? "dall-e-3",
+    });
+    result = await openai.generate({
+      prompt,
+      width,
+      height,
+      style: style as "natural" | "artistic" | "photographic" | "illustration" | undefined,
+    });
+  }
+
+  return {
+    base64: result.base64,
+    url: result.url,
+    revisedPrompt: result.revisedPrompt,
+    metadata: result.metadata,
+  };
 }

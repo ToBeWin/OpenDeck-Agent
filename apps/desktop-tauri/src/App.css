@@ -2140,6 +2140,64 @@ body {
   color: #ccc;
 }
 
+/* ── Image Panel ── */
+
+.inspector-image-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 8px 0;
+}
+
+.inspector-image-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.inspector-image-preview {
+  background: #1a1a3a;
+  border-radius: 6px;
+  padding: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 60px;
+}
+
+.inspector-image-placeholder {
+  color: #666;
+  font-size: 11px;
+  text-transform: uppercase;
+}
+
+.inspector-image-prompt {
+  font-size: 10px;
+  color: #888;
+  line-height: 1.3;
+}
+
+.inspector-image-generate-btn {
+  width: 100%;
+  margin-top: 8px;
+  padding: 8px 12px;
+  background: #4a6cf7;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.inspector-image-generate-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.inspector-image-generate-btn:hover:not(:disabled) {
+  background: #5b7df8;
+}
+
 /* =========================================================================
    PRESENTATION MODE
    ========================================================================= */
