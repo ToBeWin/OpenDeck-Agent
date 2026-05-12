@@ -576,6 +576,107 @@ body {
   margin-top: 2px;
 }
 
+/* Case study layout */
+
+.slide-layout-case-study {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  height: 100%;
+}
+
+.case-study-sections {
+  display: flex;
+  gap: 12px;
+  flex: 1;
+}
+
+.case-study-section {
+  flex: 1;
+  padding: 12px;
+  border-top: 3px solid;
+  background: rgba(255, 255, 255, 0.02);
+  border-radius: 0 0 6px 6px;
+}
+
+.case-study-label {
+  margin: 0 0 8px 0;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+/* Closing layout */
+
+.slide-layout-closing {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  height: 100%;
+  text-align: center;
+}
+
+/* Image + text layout */
+
+.slide-layout-image-text {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  height: 100%;
+}
+
+.image-text-row {
+  display: flex;
+  gap: 20px;
+  flex: 1;
+  align-items: flex-start;
+}
+
+.image-text-row.image-text-reverse {
+  flex-direction: row-reverse;
+}
+
+.image-text-image {
+  flex: 0 0 40%;
+  aspect-ratio: 16/10;
+  border-radius: 8px;
+  border: 1px solid;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+}
+
+.image-text-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* Three column layout */
+
+.slide-layout-three-col {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  height: 100%;
+}
+
+.slide-three-col-row {
+  display: flex;
+  gap: 16px;
+  flex: 1;
+}
+
+.slide-three-col-row .slide-body-col {
+  flex: 1;
+  min-width: 0;
+}
+
 /* Slide elements */
 
 .slide-title {
@@ -2015,6 +2116,18 @@ body {
 
 .presentation-slide .chart-pie-legend {
   font-size: 14px;
+}
+
+.presentation-slide .case-study-label {
+  font-size: 14px;
+}
+
+.presentation-slide .case-study-section {
+  padding: 16px;
+}
+
+.presentation-slide .image-text-image {
+  min-height: 200px;
 }
 
 .presentation-controls {

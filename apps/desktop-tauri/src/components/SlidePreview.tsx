@@ -558,7 +558,83 @@ function renderSlideLayout(slide: SlideData, theme: DeckTheme) {
     );
   }
 
-  // Default: title_content, consulting_summary, case_study, etc.
+  if (layout === "three_column") {
+    const title = elements.find((el) => el.role === "title");
+    const cols = elements.filter((el) => el.role === "body");
+    return (
+      <div className="slide-layout-three-col">
+        {title && <SlideElement el={title} theme={theme} layout={layout} />}
+        <div className="slide-three-col-row">
+          {cols.map((col) => (
+            <SlideElement
+              key={col.id}
+              el={col}
+              theme={theme}
+              layout="two_column"
+            />
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  if (layout === "case_study") {
+    const title = elements.find((el) => el.role === "title");
+    const labels = elements.filter((el) => el.role === "label");
+    const bodies = elements.filter((el) => el.role === "body");
+    return (
+      <div className="slide-layout-case-study">
+        {title && <SlideElement el={title} theme={theme} layout={layout} />}
+        <div className="case-study-sections">
+          {labels.map((label, i) => (
+            <div key={label.id} className="case-study-section" style={{ borderColor: theme.colors.accent }}>
+              <p className="case-study-label" style={{ color: theme.colors.accent }}>{label.content}</p>
+              {bodies[i] && <SlideElement el={bodies[i]} theme={theme} layout={layout} />}
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  if (layout === "closing") {
+    const title = elements.find((el) => el.role === "title");
+    const subtitle = elements.find((el) => el.role === "subtitle");
+    const body = elements.find((el) => el.role === "body");
+    return (
+      <div className="slide-layout-closing">
+        {title && <SlideElement el={title} theme={theme} layout={layout} />}
+        {subtitle && <SlideElement el={subtitle} theme={theme} layout={layout} />}
+        {body && <SlideElement el={body} theme={theme} layout={layout} />}
+      </div>
+    );
+  }
+
+  if (layout === "image_left_text_right" || layout === "image_right_text_left") {
+    const title = elements.find((el) => el.role === "title");
+    const image = elements.find((el) => el.type === "image");
+    const bodies = elements.filter((el) => el.role === "body");
+    const isImageLeft = layout === "image_left_text_right";
+    return (
+      <div className="slide-layout-image-text">
+        {title && <SlideElement el={title} theme={theme} layout={layout} />}
+        <div className={`image-text-row ${isImageLeft ? "" : "image-text-reverse"}`}>
+          {image && (
+            <div className="image-text-image" style={{ background: theme.colors.surface, borderColor: theme.colors.border }}>
+              <span style={{ color: theme.colors.textSecondary }}>[Image]</span>
+            </div>
+          )}
+          <div className="image-text-content">
+            {bodies.map((b) => (
+              <SlideElement key={b.id} el={b} theme={theme} layout={layout} />
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Default: title_content, consulting_summary, etc.
   return (
     <div className="slide-layout-default">
       {elements.map((el) => (
