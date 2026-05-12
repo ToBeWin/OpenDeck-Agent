@@ -1,7 +1,11 @@
 import { useState, useRef, useEffect } from "react";
 import { useStore } from "../store";
 
-export function TopBar() {
+interface TopBarProps {
+  onPresent?: () => void;
+}
+
+export function TopBar({ onPresent }: TopBarProps) {
   const deck = useStore((s) => s.deck);
   const loading = useStore((s) => s.loading);
   const setDeck = useStore((s) => s.setDeck);
@@ -43,6 +47,15 @@ export function TopBar() {
             >
               New Deck
             </button>
+            {onPresent && (
+              <button
+                className="top-bar-btn"
+                onClick={onPresent}
+                title="Present (Ctrl+P)"
+              >
+                Present
+              </button>
+            )}
             <div className="export-dropdown" ref={exportRef}>
               <button
                 className="top-bar-btn top-bar-btn-accent"

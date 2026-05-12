@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { TopBar } from "./components/TopBar";
 import { DeckOutline } from "./components/DeckOutline";
 import { SlidePreview } from "./components/SlidePreview";
@@ -6,6 +6,7 @@ import { Inspector } from "./components/Inspector";
 import { CommandBar } from "./components/CommandBar";
 import { StatusBar } from "./components/StatusBar";
 import { SettingsPanel } from "./components/SettingsPanel";
+import { PresentationMode } from "./components/PresentationMode";
 import { useStore } from "./store";
 import "./App.css";
 
@@ -21,9 +22,13 @@ function App() {
   const redo = useStore((s) => s.redo);
   const deck = useStore((s) => s.deck);
   const commandBarOpen = useStore((s) => s.commandBarOpen);
+  const [presenting, setPresenting] = useState(false);
 
   useEffect(() => {
     function handleKeyDown(e: KeyboardEvent) {
+      // Presentation mode handles its own keys
+      if (presenting) return;
+
       const mod = e.metaKey || e.ctrlKey;
 
       // Ctrl/Cmd+K — toggle command bar
@@ -61,6 +66,13 @@ function App() {
         return;
       }
 
+      // Ctrl/Cmd+P — presentation mode
+      if (mod && e.key === "p") {
+        e.preventDefault();
+        if (deck) setPresenting(true);
+        return;
+      }
+
       // Ctrl/Cmd+Z — undo
       if (mod && !e.shiftKey && e.key === "z") {
         e.preventDefault();
@@ -92,11 +104,15 @@ function App() {
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [deck, commandBarOpen, toggleCommandBar, toggleSettings, setDeck, nextSlide, prevSlide, exportCurrentDeck, undo, redo]);
+  }, [deck, commandBarOpen, presenting, toggleCommandBar, toggleSettings, setDeck, nextSlide, prevSlide, exportCurrentDeck, undo, redo]);
+
+  if (presenting) {
+    return <PresentationMode onClose={() => setPresenting(false)} />;
+  }
 
   return (
     <div className="app">
-      <TopBar />
+      <TopBar onPresent={() => setPresenting(true)} />
       <div className="workspace">
         <DeckOutline />
         <SlidePreview />
