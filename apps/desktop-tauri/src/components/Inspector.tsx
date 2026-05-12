@@ -2,7 +2,37 @@ import { useState, useCallback } from "react";
 import { useStore } from "../store";
 import type { SlideData, ElementData } from "../types";
 
-type TabId = "structure" | "content" | "style" | "notes";
+type TabId = "structure" | "content" | "style" | "layout" | "theme" | "notes";
+
+/* ------------------------------------------------------------------ */
+/*  Layout definitions                                                 */
+/* ------------------------------------------------------------------ */
+
+const LAYOUTS: { id: string; label: string }[] = [
+  { id: "hero_title", label: "Hero Title" },
+  { id: "title_content", label: "Title + Content" },
+  { id: "two_column", label: "Two Column" },
+  { id: "three_column", label: "Three Column" },
+  { id: "big_number", label: "Big Number" },
+  { id: "comparison_matrix", label: "Comparison Matrix" },
+  { id: "timeline_horizontal", label: "Timeline (H)" },
+  { id: "timeline_vertical", label: "Timeline (V)" },
+  { id: "process_flow", label: "Process Flow" },
+  { id: "image_left_text_right", label: "Image Left" },
+  { id: "image_right_text_left", label: "Image Right" },
+  { id: "full_bleed_image", label: "Full Bleed" },
+  { id: "chart_focus", label: "Chart Focus" },
+  { id: "quote_focus", label: "Quote" },
+  { id: "grid_cards", label: "Grid Cards" },
+  { id: "consulting_summary", label: "Consulting" },
+  { id: "section_divider", label: "Section Divider" },
+  { id: "problem", label: "Problem" },
+  { id: "solution", label: "Solution" },
+];
+
+/* ------------------------------------------------------------------ */
+/*  Structure Tab                                                      */
+/* ------------------------------------------------------------------ */
 
 function StructureTab({ slide }: { slide: SlideData }) {
   return (
@@ -60,6 +90,10 @@ function ElementRow({ el }: { el: ElementData }) {
     </div>
   );
 }
+
+/* ------------------------------------------------------------------ */
+/*  Content Tab                                                        */
+/* ------------------------------------------------------------------ */
 
 function ContentTab({
   slide,
@@ -139,7 +173,204 @@ function ContentField({
   );
 }
 
-function StyleTab() {
+/* ------------------------------------------------------------------ */
+/*  Style Tab (element-level styling)                                  */
+/* ------------------------------------------------------------------ */
+
+function StyleTab({
+  slide,
+  slideIndex,
+}: {
+  slide: SlideData;
+  slideIndex: number;
+}) {
+  const updateSlideElementStyle = useStore((s) => s.updateSlideElementStyle);
+  const [selectedId, setSelectedId] = useState<string | null>(
+    slide.elements[0]?.id ?? null
+  );
+  const [localStyle, setLocalStyle] = useState<Record<string, string>>({});
+
+  const selectedEl = slide.elements.find((el) => el.id === selectedId) ?? null;
+
+  const commitStyle = useCallback(() => {
+    if (!selectedId || Object.keys(localStyle).length === 0) return;
+    updateSlideElementStyle(slideIndex, selectedId, localStyle);
+    setLocalStyle({});
+  }, [localStyle, selectedId, slideIndex, updateSlideElementStyle]);
+
+  const getVal = (key: string): string => {
+    if (localStyle[key] !== undefined) return localStyle[key];
+    if (selectedEl?.style && key in selectedEl.style)
+      return String(selectedEl.style[key]);
+    return "";
+  };
+
+  const setLocal = (key: string, value: string) => {
+    setLocalStyle((prev) => ({ ...prev, [key]: value }));
+  };
+
+  return (
+    <div className="inspector-section">
+      {/* Element selector */}
+      <div className="inspector-field">
+        <span className="inspector-label">Element</span>
+        <select
+          className="inspector-select"
+          value={selectedId ?? ""}
+          onChange={(e) => {
+            commitStyle();
+            setSelectedId(e.target.value);
+            setLocalStyle({});
+          }}
+        >
+          {slide.elements.map((el) => (
+            <option key={el.id} value={el.id}>
+              {el.role} ({el.type})
+            </option>
+          ))}
+        </select>
+      </div>
+
+      {selectedEl && selectedEl.type === "text" && (
+        <>
+          <div className="inspector-divider" />
+          <span className="inspector-section-title">Typography</span>
+
+          {/* Font size */}
+          <div className="inspector-field">
+            <span className="inspector-label">Font Size</span>
+            <input
+              type="number"
+              className="inspector-input"
+              min={12}
+              max={72}
+              value={getVal("fontSize") || ""}
+              placeholder="inherit"
+              onChange={(e) => setLocal("fontSize", e.target.value)}
+              onBlur={commitStyle}
+            />
+          </div>
+
+          {/* Font weight */}
+          <div className="inspector-field">
+            <span className="inspector-label">Font Weight</span>
+            <select
+              className="inspector-select"
+              value={getVal("fontWeight") || ""}
+              onChange={(e) => {
+                setLocal("fontWeight", e.target.value);
+                // commit immediately for select
+                if (selectedId) {
+                  updateSlideElementStyle(slideIndex, selectedId, {
+                    fontWeight: e.target.value,
+                  });
+                }
+              }}
+            >
+              <option value="">inherit</option>
+              <option value="normal">Normal</option>
+              <option value="bold">Bold</option>
+            </select>
+          </div>
+
+          <div className="inspector-divider" />
+          <span className="inspector-section-title">Colors</span>
+
+          {/* Text color */}
+          <div className="inspector-field">
+            <span className="inspector-label">Text Color</span>
+            <div className="inspector-color-input-row">
+              <input
+                type="color"
+                className="inspector-color-picker"
+                value={getVal("color") || "#e0e0e0"}
+                onChange={(e) => setLocal("color", e.target.value)}
+                onBlur={commitStyle}
+              />
+              <input
+                type="text"
+                className="inspector-input inspector-input-compact"
+                value={getVal("color") || ""}
+                placeholder="inherit"
+                onChange={(e) => setLocal("color", e.target.value)}
+                onBlur={commitStyle}
+              />
+            </div>
+          </div>
+
+          {/* Background color */}
+          <div className="inspector-field">
+            <span className="inspector-label">Background Color</span>
+            <div className="inspector-color-input-row">
+              <input
+                type="color"
+                className="inspector-color-picker"
+                value={getVal("backgroundColor") || "#000000"}
+                onChange={(e) => setLocal("backgroundColor", e.target.value)}
+                onBlur={commitStyle}
+              />
+              <input
+                type="text"
+                className="inspector-input inspector-input-compact"
+                value={getVal("backgroundColor") || ""}
+                placeholder="transparent"
+                onChange={(e) => setLocal("backgroundColor", e.target.value)}
+                onBlur={commitStyle}
+              />
+            </div>
+          </div>
+        </>
+      )}
+
+      {selectedEl && selectedEl.type !== "text" && (
+        <div className="inspector-style-hint">
+          Style controls are available for text elements.
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/*  Layout Tab                                                         */
+/* ------------------------------------------------------------------ */
+
+function LayoutTab({
+  slide,
+  slideIndex,
+}: {
+  slide: SlideData;
+  slideIndex: number;
+}) {
+  const updateSlideLayout = useStore((s) => s.updateSlideLayout);
+
+  return (
+    <div className="inspector-section">
+      <span className="inspector-section-title">Slide Layout</span>
+      <div className="inspector-layout-grid">
+        {LAYOUTS.map((layout) => (
+          <button
+            key={layout.id}
+            className={`inspector-layout-card ${
+              slide.layout === layout.id ? "inspector-layout-card-active" : ""
+            }`}
+            onClick={() => updateSlideLayout(slideIndex, layout.id)}
+            title={layout.id}
+          >
+            <span className="inspector-layout-card-label">{layout.label}</span>
+            <span className="inspector-layout-card-id">{layout.id}</span>
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/*  Theme Tab (existing style display)                                 */
+/* ------------------------------------------------------------------ */
+
+function ThemeTab() {
   const theme = useStore((s) => s.deck?.theme);
   if (!theme) return null;
 
@@ -189,6 +420,10 @@ function StyleTab() {
   );
 }
 
+/* ------------------------------------------------------------------ */
+/*  Notes Tab                                                          */
+/* ------------------------------------------------------------------ */
+
 function NotesTab({ slide }: { slide: SlideData }) {
   return (
     <div className="inspector-section">
@@ -204,10 +439,16 @@ function NotesTab({ slide }: { slide: SlideData }) {
   );
 }
 
+/* ------------------------------------------------------------------ */
+/*  Tab definitions & main Inspector                                   */
+/* ------------------------------------------------------------------ */
+
 const tabs: { id: TabId; label: string }[] = [
   { id: "structure", label: "Structure" },
   { id: "content", label: "Content" },
   { id: "style", label: "Style" },
+  { id: "layout", label: "Layout" },
+  { id: "theme", label: "Theme" },
   { id: "notes", label: "Notes" },
 ];
 
@@ -239,7 +480,13 @@ export function Inspector() {
         {activeTab === "content" && (
           <ContentTab slide={slide} slideIndex={currentSlideIndex} />
         )}
-        {activeTab === "style" && <StyleTab />}
+        {activeTab === "style" && (
+          <StyleTab slide={slide} slideIndex={currentSlideIndex} />
+        )}
+        {activeTab === "layout" && (
+          <LayoutTab slide={slide} slideIndex={currentSlideIndex} />
+        )}
+        {activeTab === "theme" && <ThemeTab />}
         {activeTab === "notes" && <NotesTab slide={slide} />}
       </div>
     </div>

@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useStore } from "../store";
 import { WelcomeView } from "./WelcomeView";
 import type { SlideData, ElementData, DeckTheme } from "../types";
@@ -25,6 +26,204 @@ function BarChart({ data, colors }: { data: ElementData; colors: DeckTheme["colo
       ))}
     </div>
   );
+}
+
+function LineChart({ data, colors }: { data: ElementData; colors: DeckTheme["colors"] }) {
+  if (!data.data) return null;
+  const { categories, series } = data.data;
+  const values = series[0]?.values || [];
+  if (values.length === 0) return null;
+  const max = Math.max(...values, 1);
+  const w = 400;
+  const h = 200;
+  const padX = 30;
+  const padBottom = 30;
+  const plotW = w - padX * 2;
+  const plotH = h - padBottom - 10;
+
+  const points = values.map((v, i) => ({
+    x: padX + (i / Math.max(values.length - 1, 1)) * plotW,
+    y: 10 + plotH - (v / max) * plotH,
+  }));
+  const polylinePoints = points.map((p) => `${p.x},${p.y}`).join(" ");
+  const strokeColor = colors.chartColors[0] || colors.accent;
+
+  return (
+    <div className="chart-line">
+      <svg viewBox={`0 0 ${w} ${h}`} preserveAspectRatio="xMidYMid meet">
+        <polyline
+          points={polylinePoints}
+          fill="none"
+          stroke={strokeColor}
+          strokeWidth="2.5"
+          strokeLinejoin="round"
+          strokeLinecap="round"
+        />
+        {points.map((p, i) => (
+          <circle
+            key={i}
+            cx={p.x}
+            cy={p.y}
+            r="4"
+            fill={colors.chartColors[i % colors.chartColors.length]}
+            stroke={colors.background}
+            strokeWidth="1.5"
+          />
+        ))}
+        {categories.map((cat, i) => (
+          <text
+            key={i}
+            x={points[i]?.x ?? 0}
+            y={h - 4}
+            textAnchor="middle"
+            fontSize="10"
+            fill={colors.textSecondary}
+          >
+            {cat}
+          </text>
+        ))}
+      </svg>
+    </div>
+  );
+}
+
+function PieChart({ data, colors }: { data: ElementData; colors: DeckTheme["colors"] }) {
+  if (!data.data) return null;
+  const { categories, series } = data.data;
+  const values = series[0]?.values || [];
+  if (values.length === 0) return null;
+  const total = values.reduce((a, b) => a + b, 0) || 1;
+
+  const radius = 70;
+  const circumference = 2 * Math.PI * radius;
+  let cumulative = 0;
+
+  const segments = values.map((v, i) => {
+    const pct = v / total;
+    const dashLen = pct * circumference;
+    const dashOffset = -cumulative * circumference;
+    cumulative += pct;
+    return {
+      dashLen,
+      dashOffset,
+      color: colors.chartColors[i % colors.chartColors.length],
+      label: categories[i] ?? `Series ${i + 1}`,
+      pct,
+    };
+  });
+
+  return (
+    <div className="chart-pie">
+      <svg viewBox="0 0 200 200" className="chart-pie-svg">
+        {segments.map((seg, i) => (
+          <circle
+            key={i}
+            cx="100"
+            cy="100"
+            r={radius}
+            fill="none"
+            stroke={seg.color}
+            strokeWidth="40"
+            strokeDasharray={`${seg.dashLen} ${circumference - seg.dashLen}`}
+            strokeDashoffset={seg.dashOffset}
+            transform="rotate(-90 100 100)"
+          />
+        ))}
+      </svg>
+      <div className="chart-pie-legend">
+        {segments.map((seg, i) => (
+          <div key={i} className="chart-pie-legend-item">
+            <span className="chart-pie-legend-dot" style={{ background: seg.color }} />
+            <span className="chart-pie-legend-label">{seg.label}</span>
+            <span className="chart-pie-legend-value">{Math.round(seg.pct * 100)}%</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function AreaChart({ data, colors }: { data: ElementData; colors: DeckTheme["colors"] }) {
+  if (!data.data) return null;
+  const { categories, series } = data.data;
+  const values = series[0]?.values || [];
+  if (values.length === 0) return null;
+  const max = Math.max(...values, 1);
+  const w = 400;
+  const h = 200;
+  const padX = 30;
+  const padBottom = 30;
+  const plotW = w - padX * 2;
+  const plotH = h - padBottom - 10;
+
+  const points = values.map((v, i) => ({
+    x: padX + (i / Math.max(values.length - 1, 1)) * plotW,
+    y: 10 + plotH - (v / max) * plotH,
+  }));
+
+  const linePoints = points.map((p) => `${p.x},${p.y}`).join(" ");
+  const bottomY = 10 + plotH;
+  const polygonPoints = `${points[0].x},${bottomY} ${linePoints} ${points[points.length - 1].x},${bottomY}`;
+  const fillColor = colors.chartColors[0] || colors.accent;
+  const strokeColor = fillColor;
+
+  return (
+    <div className="chart-area">
+      <svg viewBox={`0 0 ${w} ${h}`} preserveAspectRatio="xMidYMid meet">
+        <polygon
+          points={polygonPoints}
+          fill={fillColor}
+          fillOpacity="0.25"
+          stroke="none"
+        />
+        <polyline
+          points={linePoints}
+          fill="none"
+          stroke={strokeColor}
+          strokeWidth="2.5"
+          strokeLinejoin="round"
+          strokeLinecap="round"
+        />
+        {points.map((p, i) => (
+          <circle
+            key={i}
+            cx={p.x}
+            cy={p.y}
+            r="4"
+            fill={colors.chartColors[i % colors.chartColors.length]}
+            stroke={colors.background}
+            strokeWidth="1.5"
+          />
+        ))}
+        {categories.map((cat, i) => (
+          <text
+            key={i}
+            x={points[i]?.x ?? 0}
+            y={h - 4}
+            textAnchor="middle"
+            fontSize="10"
+            fill={colors.textSecondary}
+          >
+            {cat}
+          </text>
+        ))}
+      </svg>
+    </div>
+  );
+}
+
+function ChartElement({ data, colors }: { data: ElementData; colors: DeckTheme["colors"] }) {
+  switch (data.chartType) {
+    case "line":
+      return <LineChart data={data} colors={colors} />;
+    case "pie":
+      return <PieChart data={data} colors={colors} />;
+    case "area":
+      return <AreaChart data={data} colors={colors} />;
+    case "bar":
+    default:
+      return <BarChart data={data} colors={colors} />;
+  }
 }
 
 function TableElement({ data }: { data: ElementData }) {
@@ -70,7 +269,7 @@ function SlideElement({
   }
 
   if (el.type === "chart") {
-    return <BarChart data={el} colors={colors} />;
+    return <ChartElement data={el} colors={colors} />;
   }
 
   const text = el.content || "";
@@ -422,6 +621,8 @@ export function SlidePreview() {
   const slide = deck.slides[currentSlideIndex];
   if (!slide) return null;
 
+  const [showNotes, setShowNotes] = useState(!!slide.speakerNote);
+
   const theme = deck.theme;
   const showProgress = generationStep !== null && generationStep !== "完成";
 
@@ -454,7 +655,26 @@ export function SlidePreview() {
         >
           &rarr;
         </button>
+        {slide.speakerNote && (
+          <button
+            className="slide-nav-btn speaker-notes-toggle"
+            onClick={() => setShowNotes(!showNotes)}
+            title="Toggle Speaker Notes"
+            style={{ fontSize: '12px' }}
+          >
+            {showNotes ? '📝' : '📝'}
+          </button>
+        )}
       </div>
+      {showNotes && slide.speakerNote && (
+        <div className="speaker-notes">
+          <div className="speaker-notes-header">
+            <span className="speaker-notes-icon">📝</span>
+            <span className="speaker-notes-title">Speaker Notes</span>
+          </div>
+          <p className="speaker-notes-text">{slide.speakerNote}</p>
+        </div>
+      )}
     </div>
   );
 }

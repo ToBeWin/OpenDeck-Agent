@@ -24,6 +24,8 @@ interface AppState {
 
   setDeck: (deck: DeckData | null) => void;
   updateSlideContent: (slideIndex: number, elementId: string, content: string) => void;
+  updateSlideElementStyle: (slideIndex: number, elementId: string, style: Record<string, unknown>) => void;
+  updateSlideLayout: (slideIndex: number, layout: string) => void;
   setCurrentSlide: (index: number) => void;
   nextSlide: () => void;
   prevSlide: () => void;
@@ -72,6 +74,33 @@ export const useStore = create<AppState>((set, get) => ({
           el.id === elementId ? { ...el, content } : el
         ),
       };
+    });
+    set({ deck: { ...deck, slides } });
+  },
+
+  updateSlideElementStyle: (slideIndex, elementId, style) => {
+    const { deck } = get();
+    if (!deck) return;
+    const slides = deck.slides.map((slide, i) => {
+      if (i !== slideIndex) return slide;
+      return {
+        ...slide,
+        elements: slide.elements.map((el) =>
+          el.id === elementId
+            ? { ...el, style: { ...(el.style ?? {}), ...style } }
+            : el
+        ),
+      };
+    });
+    set({ deck: { ...deck, slides } });
+  },
+
+  updateSlideLayout: (slideIndex, layout) => {
+    const { deck } = get();
+    if (!deck) return;
+    const slides = deck.slides.map((slide, i) => {
+      if (i !== slideIndex) return slide;
+      return { ...slide, layout };
     });
     set({ deck: { ...deck, slides } });
   },

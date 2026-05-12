@@ -87,6 +87,7 @@ export interface ElementData {
   rows?: string[][];
   chartType?: string;
   data?: ChartData;
+  style?: Record<string, unknown>;
 }
 
 export interface SlideData {
@@ -96,6 +97,7 @@ export interface SlideData {
   layout: string;
   communicationGoal?: string;
   mainMessage?: string;
+  speakerNote?: string;
   elements: ElementData[];
 }
 
