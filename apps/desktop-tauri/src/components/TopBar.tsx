@@ -74,6 +74,16 @@ export function TopBar() {
                     <span className="export-format">PDF</span>
                     <span className="export-desc">Portable Document</span>
                   </button>
+                  <button
+                    className="export-menu-item"
+                    onClick={() => {
+                      exportCurrentDeck("html");
+                      setExportOpen(false);
+                    }}
+                  >
+                    <span className="export-format">HTML</span>
+                    <span className="export-desc">Single-file Web Page</span>
+                  </button>
                 </div>
               )}
             </div>

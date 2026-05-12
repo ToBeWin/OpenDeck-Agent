@@ -10,6 +10,7 @@ pub fn run() {
             commands::agent::modify_deck,
             commands::agent::export_pptx,
             commands::agent::export_pdf,
+            commands::agent::export_html,
             commands::agent::check_provider,
             commands::agent::list_providers,
         ])

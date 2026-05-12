@@ -17,6 +17,8 @@ function App() {
   const nextSlide = useStore((s) => s.nextSlide);
   const prevSlide = useStore((s) => s.prevSlide);
   const exportCurrentDeck = useStore((s) => s.exportCurrentDeck);
+  const undo = useStore((s) => s.undo);
+  const redo = useStore((s) => s.redo);
   const deck = useStore((s) => s.deck);
   const commandBarOpen = useStore((s) => s.commandBarOpen);
 
@@ -59,6 +61,20 @@ function App() {
         return;
       }
 
+      // Ctrl/Cmd+Z — undo
+      if (mod && !e.shiftKey && e.key === "z") {
+        e.preventDefault();
+        undo();
+        return;
+      }
+
+      // Ctrl/Cmd+Shift+Z or Ctrl/Cmd+Y — redo
+      if (mod && ((e.shiftKey && e.key === "Z") || e.key === "y")) {
+        e.preventDefault();
+        redo();
+        return;
+      }
+
       // Don't handle navigation when command bar is open or in input
       if (commandBarOpen) return;
       const tag = (e.target as HTMLElement).tagName;
@@ -76,7 +92,7 @@ function App() {
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [deck, commandBarOpen, toggleCommandBar, toggleSettings, setDeck, nextSlide, prevSlide, exportCurrentDeck]);
+  }, [deck, commandBarOpen, toggleCommandBar, toggleSettings, setDeck, nextSlide, prevSlide, exportCurrentDeck, undo, redo]);
 
   return (
     <div className="app">

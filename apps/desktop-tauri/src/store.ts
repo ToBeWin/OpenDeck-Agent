@@ -11,6 +11,8 @@ interface AppState {
   commandBarOpen: boolean;
   commandHistory: string[];
   settingsOpen: boolean;
+  history: DeckData[];
+  future: DeckData[];
   providerConfig: {
     provider: "mock" | "ollama" | "openai";
     ollamaBaseUrl: string;
@@ -38,7 +40,9 @@ interface AppState {
   updateProviderConfig: (config: Partial<AppState["providerConfig"]>) => void;
   generateFromPrompt: (prompt: string) => Promise<void>;
   modifyFromCommand: (command: string) => Promise<void>;
-  exportCurrentDeck: (format?: "pptx" | "pdf") => Promise<void>;
+  exportCurrentDeck: (format?: "pptx" | "pdf" | "html") => Promise<void>;
+  undo: () => void;
+  redo: () => void;
 }
 
 export const useStore = create<AppState>((set, get) => ({
@@ -50,6 +54,8 @@ export const useStore = create<AppState>((set, get) => ({
   commandBarOpen: false,
   commandHistory: [],
   settingsOpen: false,
+  history: [],
+  future: [],
   providerConfig: {
     provider: "mock",
     ollamaBaseUrl: "http://localhost:11434",
@@ -61,10 +67,10 @@ export const useStore = create<AppState>((set, get) => ({
     theme: "Bloomberg Dark",
   },
 
-  setDeck: (deck) => set({ deck, currentSlideIndex: 0, error: null }),
+  setDeck: (deck) => set({ deck, currentSlideIndex: 0, error: null, history: [], future: [] }),
 
   updateSlideContent: (slideIndex, elementId, content) => {
-    const { deck } = get();
+    const { deck, history } = get();
     if (!deck) return;
     const slides = deck.slides.map((slide, i) => {
       if (i !== slideIndex) return slide;
@@ -75,11 +81,11 @@ export const useStore = create<AppState>((set, get) => ({
         ),
       };
     });
-    set({ deck: { ...deck, slides } });
+    set({ deck: { ...deck, slides }, history: [...history, deck].slice(-50), future: [] });
   },
 
   updateSlideElementStyle: (slideIndex, elementId, style) => {
-    const { deck } = get();
+    const { deck, history } = get();
     if (!deck) return;
     const slides = deck.slides.map((slide, i) => {
       if (i !== slideIndex) return slide;
@@ -92,17 +98,17 @@ export const useStore = create<AppState>((set, get) => ({
         ),
       };
     });
-    set({ deck: { ...deck, slides } });
+    set({ deck: { ...deck, slides }, history: [...history, deck].slice(-50), future: [] });
   },
 
   updateSlideLayout: (slideIndex, layout) => {
-    const { deck } = get();
+    const { deck, history } = get();
     if (!deck) return;
     const slides = deck.slides.map((slide, i) => {
       if (i !== slideIndex) return slide;
       return { ...slide, layout };
     });
-    set({ deck: { ...deck, slides } });
+    set({ deck: { ...deck, slides }, history: [...history, deck].slice(-50), future: [] });
   },
 
   setCurrentSlide: (index) => {
@@ -203,7 +209,7 @@ export const useStore = create<AppState>((set, get) => ({
     }
   },
 
-  exportCurrentDeck: async (format: "pptx" | "pdf" = "pptx") => {
+  exportCurrentDeck: async (format: "pptx" | "pdf" | "html" = "pptx") => {
     const { deck } = get();
     if (!deck) {
       set({ error: "No deck to export" });
@@ -215,6 +221,9 @@ export const useStore = create<AppState>((set, get) => ({
       if (format === "pdf") {
         const { exportPdf } = await import("./lib/tauri");
         await exportPdf(deckJson);
+      } else if (format === "html") {
+        const { exportHtml } = await import("./lib/tauri");
+        await exportHtml(deckJson);
       } else {
         const { exportPptx } = await import("./lib/tauri");
         await exportPptx(deckJson);
@@ -224,5 +233,27 @@ export const useStore = create<AppState>((set, get) => ({
     } finally {
       set({ loading: false });
     }
+  },
+
+  undo: () => {
+    const { history, deck, future } = get();
+    if (history.length === 0) return;
+    const prev = history[history.length - 1];
+    set({
+      deck: prev,
+      history: history.slice(0, -1),
+      future: deck ? [deck, ...future] : future,
+    });
+  },
+
+  redo: () => {
+    const { future, deck, history } = get();
+    if (future.length === 0) return;
+    const next = future[0];
+    set({
+      deck: next,
+      future: future.slice(1),
+      history: deck ? [...history, deck] : history,
+    });
   },
 }));
