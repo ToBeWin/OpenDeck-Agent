@@ -5,6 +5,17 @@ import {
   listProviders as listRegisteredProviders,
 } from "@opendeck/model-providers";
 import type { TextModelProvider } from "@opendeck/model-providers";
+import { createOpenAICompatProvider } from "@opendeck/model-providers";
+import { createAnthropicProvider } from "@opendeck/model-providers";
+import { createGeminiProvider } from "@opendeck/model-providers";
+import { createDeepSeekProvider } from "@opendeck/model-providers";
+import { createKimiProvider } from "@opendeck/model-providers";
+import { createQwenProvider } from "@opendeck/model-providers";
+import { createGLMProvider } from "@opendeck/model-providers";
+import { createMiniMaxProvider } from "@opendeck/model-providers";
+import { createOpenRouterProvider } from "@opendeck/model-providers";
+import { createLMStudioProvider } from "@opendeck/model-providers";
+import { createVLLMProvider } from "@opendeck/model-providers";
 import { parseRevisionCommand, applyRevisions } from "@opendeck/revision";
 import type { Deck } from "@opendeck/slide-dsl";
 
@@ -247,6 +258,85 @@ function createPipelineMockProvider(): TextModelProvider {
 registerProvider(createPipelineMockProvider());
 
 // ---------------------------------------------------------------------------
+// Dynamic provider creation from config
+// ---------------------------------------------------------------------------
+
+function resolveProvider(params: Record<string, unknown>): TextModelProvider {
+  const providerName = (params.provider as string) || "mock";
+
+  // Already registered (e.g. mock)
+  const existing = getProvider(providerName);
+  if (existing) return existing;
+
+  // Dynamic creation based on provider type
+  const apiKey = (params.apiKey as string) || "";
+  const baseUrl = (params.baseUrl as string) || "";
+  const model = (params.model as string) || "";
+
+  let provider: TextModelProvider;
+
+  switch (providerName) {
+    case "openai": {
+      provider = createOpenAICompatProvider({ apiKey, baseUrl, model });
+      break;
+    }
+    case "anthropic": {
+      provider = createAnthropicProvider({ apiKey, baseUrl, model });
+      break;
+    }
+    case "gemini": {
+      provider = createGeminiProvider({ apiKey, baseUrl, model });
+      break;
+    }
+    case "deepseek": {
+      provider = createDeepSeekProvider({ apiKey, baseUrl, model });
+      break;
+    }
+    case "kimi": {
+      provider = createKimiProvider({ apiKey, baseUrl, model });
+      break;
+    }
+    case "qwen": {
+      provider = createQwenProvider({ apiKey, baseUrl, model });
+      break;
+    }
+    case "glm-domestic": {
+      provider = createGLMProvider({ apiKey, baseUrl, model, region: "domestic" });
+      break;
+    }
+    case "glm-international": {
+      provider = createGLMProvider({ apiKey, baseUrl, model, region: "international" });
+      break;
+    }
+    case "minimax-domestic": {
+      provider = createMiniMaxProvider({ apiKey, baseUrl, model, region: "domestic" });
+      break;
+    }
+    case "minimax-international": {
+      provider = createMiniMaxProvider({ apiKey, baseUrl, model, region: "international" });
+      break;
+    }
+    case "openrouter": {
+      provider = createOpenRouterProvider({ apiKey, baseUrl, model });
+      break;
+    }
+    case "lmstudio": {
+      provider = createLMStudioProvider({ baseUrl, model });
+      break;
+    }
+    case "vllm": {
+      provider = createVLLMProvider({ apiKey, baseUrl, model });
+      break;
+    }
+    default:
+      throw new Error(`Unknown provider: "${providerName}". Available: mock, ollama, openai, anthropic, gemini, deepseek, kimi, qwen, glm-domestic, glm-international, minimax-domestic, minimax-international, openrouter, lmstudio, vllm`);
+  }
+
+  registerProvider(provider);
+  return provider;
+}
+
+// ---------------------------------------------------------------------------
 // Handlers
 // ---------------------------------------------------------------------------
 
@@ -256,9 +346,7 @@ export async function handleGenerate(
   const prompt = params.prompt as string;
   if (!prompt) throw new Error("Missing required param: prompt");
 
-  const providerName = (params.provider as string) || "mock";
-  const provider = getProvider(providerName);
-  if (!provider) throw new Error(`Provider "${providerName}" not found`);
+  const provider = resolveProvider(params);
 
   const deck = await generateDeck({
     prompt,
@@ -300,9 +388,15 @@ export async function handleCheckProvider(
   const name = params.name as string;
   if (!name) throw new Error("Missing required param: name");
 
-  const provider = getProvider(name);
-  if (!provider)
-    return { available: false, reason: "Provider not registered" };
+  // Try existing or dynamically create the provider for checking
+  let provider = getProvider(name);
+  if (!provider) {
+    try {
+      provider = resolveProvider({ provider: name, ...params });
+    } catch {
+      return { available: false, reason: "Provider not recognized" };
+    }
+  }
 
   try {
     await provider.complete({ prompt: "ping", maxTokens: 5 });

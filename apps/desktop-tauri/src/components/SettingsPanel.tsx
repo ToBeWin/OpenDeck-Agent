@@ -14,6 +14,60 @@ const THEMES = [
   "Tech Gradient",
 ];
 
+interface ProviderFieldMap {
+  apiKey: string;
+  baseUrl: string;
+  model: string;
+  placeholderApiKey?: string;
+  placeholderBaseUrl?: string;
+  placeholderModel?: string;
+}
+
+function CloudProviderFields({
+  fields,
+  local,
+  setLocal,
+}: {
+  fields: ProviderFieldMap;
+  local: Record<string, string>;
+  setLocal: (v: Record<string, string>) => void;
+}) {
+  return (
+    <>
+      <div className="settings-field">
+        <label className="settings-label">API Key</label>
+        <input
+          className="settings-input"
+          type="password"
+          value={local[fields.apiKey] ?? ""}
+          onChange={(e) => setLocal({ ...local, [fields.apiKey]: e.target.value })}
+          placeholder={fields.placeholderApiKey ?? "sk-..."}
+        />
+      </div>
+      <div className="settings-field">
+        <label className="settings-label">Base URL</label>
+        <input
+          className="settings-input"
+          type="text"
+          value={local[fields.baseUrl] ?? ""}
+          onChange={(e) => setLocal({ ...local, [fields.baseUrl]: e.target.value })}
+          placeholder={fields.placeholderBaseUrl ?? "https://api.openai.com/v1"}
+        />
+      </div>
+      <div className="settings-field">
+        <label className="settings-label">Model</label>
+        <input
+          className="settings-input"
+          type="text"
+          value={local[fields.model] ?? ""}
+          onChange={(e) => setLocal({ ...local, [fields.model]: e.target.value })}
+          placeholder={fields.placeholderModel ?? "gpt-4o"}
+        />
+      </div>
+    </>
+  );
+}
+
 export function SettingsPanel({ onClose }: SettingsPanelProps) {
   const providerConfig = useStore((s) => s.providerConfig);
   const updateProviderConfig = useStore((s) => s.updateProviderConfig);
@@ -112,13 +166,25 @@ export function SettingsPanel({ onClose }: SettingsPanelProps) {
               onChange={(e) =>
                 setLocal({
                   ...local,
-                  provider: e.target.value as "mock" | "ollama" | "openai",
+                  provider: e.target.value as typeof local.provider,
                 })
               }
             >
               <option value="mock">Mock (Demo)</option>
               <option value="ollama">Ollama (Local)</option>
               <option value="openai">OpenAI Compatible</option>
+              <option value="anthropic">Anthropic Claude</option>
+              <option value="gemini">Google Gemini</option>
+              <option value="deepseek">DeepSeek</option>
+              <option value="kimi">Kimi (Moonshot)</option>
+              <option value="qwen">Qwen (通义千问)</option>
+              <option value="glm-domestic">GLM 国内 (智谱)</option>
+              <option value="glm-international">GLM 国际 (智谱)</option>
+              <option value="minimax-domestic">MiniMax 国内</option>
+              <option value="minimax-international">MiniMax 国际</option>
+              <option value="openrouter">OpenRouter</option>
+              <option value="lmstudio">LM Studio (Local)</option>
+              <option value="vllm">vLLM (Local)</option>
             </select>
           </div>
 
@@ -176,44 +242,82 @@ export function SettingsPanel({ onClose }: SettingsPanelProps) {
           )}
 
           {local.provider === "openai" && (
-            <>
-              <div className="settings-field">
-                <label className="settings-label">API Key</label>
-                <input
-                  className="settings-input"
-                  type="password"
-                  value={local.openaiApiKey}
-                  onChange={(e) =>
-                    setLocal({ ...local, openaiApiKey: e.target.value })
-                  }
-                  placeholder="sk-..."
-                />
-              </div>
-              <div className="settings-field">
-                <label className="settings-label">Base URL</label>
-                <input
-                  className="settings-input"
-                  type="text"
-                  value={local.openaiBaseUrl}
-                  onChange={(e) =>
-                    setLocal({ ...local, openaiBaseUrl: e.target.value })
-                  }
-                  placeholder="https://api.openai.com/v1"
-                />
-              </div>
-              <div className="settings-field">
-                <label className="settings-label">Model</label>
-                <input
-                  className="settings-input"
-                  type="text"
-                  value={local.openaiModel}
-                  onChange={(e) =>
-                    setLocal({ ...local, openaiModel: e.target.value })
-                  }
-                  placeholder="gpt-4o"
-                />
-              </div>
-            </>
+            <CloudProviderFields fields={{
+              apiKey: "openaiApiKey", baseUrl: "openaiBaseUrl", model: "openaiModel",
+              placeholderBaseUrl: "https://api.openai.com/v1", placeholderModel: "gpt-4o",
+            }} local={local} setLocal={setLocal} />
+          )}
+          {local.provider === "kimi" && (
+            <CloudProviderFields fields={{
+              apiKey: "kimiApiKey", baseUrl: "kimiBaseUrl", model: "kimiModel",
+              placeholderBaseUrl: "https://api.moonshot.cn/v1", placeholderModel: "moonshot-v1-8k",
+            }} local={local} setLocal={setLocal} />
+          )}
+          {local.provider === "glm-domestic" && (
+            <CloudProviderFields fields={{
+              apiKey: "glmDomesticApiKey", baseUrl: "glmDomesticBaseUrl", model: "glmDomesticModel",
+              placeholderBaseUrl: "https://open.bigmodel.cn/api/paas/v4", placeholderModel: "glm-4-plus",
+            }} local={local} setLocal={setLocal} />
+          )}
+          {local.provider === "glm-international" && (
+            <CloudProviderFields fields={{
+              apiKey: "glmInternationalApiKey", baseUrl: "glmInternationalBaseUrl", model: "glmInternationalModel",
+              placeholderBaseUrl: "https://open.bigmodel.cn/api/paas/v4", placeholderModel: "glm-4-plus",
+            }} local={local} setLocal={setLocal} />
+          )}
+          {local.provider === "minimax-domestic" && (
+            <CloudProviderFields fields={{
+              apiKey: "minimaxDomesticApiKey", baseUrl: "minimaxDomesticBaseUrl", model: "minimaxDomesticModel",
+              placeholderBaseUrl: "https://api.minimax.chat/v1", placeholderModel: "MiniMax-Text-01",
+            }} local={local} setLocal={setLocal} />
+          )}
+          {local.provider === "minimax-international" && (
+            <CloudProviderFields fields={{
+              apiKey: "minimaxInternationalApiKey", baseUrl: "minimaxInternationalBaseUrl", model: "minimaxInternationalModel",
+              placeholderBaseUrl: "https://api.minimax.chat/v1", placeholderModel: "MiniMax-Text-01",
+            }} local={local} setLocal={setLocal} />
+          )}
+          {local.provider === "deepseek" && (
+            <CloudProviderFields fields={{
+              apiKey: "deepseekApiKey", baseUrl: "deepseekBaseUrl", model: "deepseekModel",
+              placeholderBaseUrl: "https://api.deepseek.com/v1", placeholderModel: "deepseek-chat",
+            }} local={local} setLocal={setLocal} />
+          )}
+          {local.provider === "qwen" && (
+            <CloudProviderFields fields={{
+              apiKey: "qwenApiKey", baseUrl: "qwenBaseUrl", model: "qwenModel",
+              placeholderBaseUrl: "https://dashscope.aliyuncs.com/compatible-mode/v1", placeholderModel: "qwen-plus",
+            }} local={local} setLocal={setLocal} />
+          )}
+          {local.provider === "openrouter" && (
+            <CloudProviderFields fields={{
+              apiKey: "openrouterApiKey", baseUrl: "openrouterBaseUrl", model: "openrouterModel",
+              placeholderBaseUrl: "https://openrouter.ai/api/v1", placeholderModel: "openai/gpt-4o-mini",
+            }} local={local} setLocal={setLocal} />
+          )}
+          {local.provider === "lmstudio" && (
+            <CloudProviderFields fields={{
+              apiKey: "lmstudioApiKey", baseUrl: "lmstudioBaseUrl", model: "lmstudioModel",
+              placeholderApiKey: "", placeholderBaseUrl: "http://localhost:1234/v1", placeholderModel: "local-model",
+            }} local={local} setLocal={setLocal} />
+          )}
+          {local.provider === "vllm" && (
+            <CloudProviderFields fields={{
+              apiKey: "vllmApiKey", baseUrl: "vllmBaseUrl", model: "vllmModel",
+              placeholderApiKey: "", placeholderBaseUrl: "http://localhost:8000/v1", placeholderModel: "meta-llama/Meta-Llama-3-8B-Instruct",
+            }} local={local} setLocal={setLocal} />
+          )}
+          {local.provider === "anthropic" && (
+            <CloudProviderFields fields={{
+              apiKey: "anthropicApiKey", baseUrl: "anthropicBaseUrl", model: "anthropicModel",
+              placeholderBaseUrl: "https://api.anthropic.com/v1", placeholderModel: "claude-3-5-sonnet-20241022",
+            }} local={local} setLocal={setLocal} />
+          )}
+          {local.provider === "gemini" && (
+            <CloudProviderFields fields={{
+              apiKey: "geminiApiKey", baseUrl: "geminiBaseUrl", model: "geminiModel",
+              placeholderBaseUrl: "https://generativelanguage.googleapis.com/v1beta", placeholderModel: "gemini-1.5-flash",
+            }} local={local} setLocal={setLocal} />
           )}
 
           {local.provider === "mock" && (

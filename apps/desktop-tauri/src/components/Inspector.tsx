@@ -1,8 +1,9 @@
 import { useState, useCallback } from "react";
 import { useStore } from "../store";
 import type { SlideData, ElementData } from "../types";
+import { QualityTab } from "./QualityTab";
 
-type TabId = "structure" | "content" | "style" | "layout" | "theme" | "notes";
+type TabId = "structure" | "content" | "style" | "layout" | "theme" | "notes" | "quality";
 
 /* ------------------------------------------------------------------ */
 /*  Layout definitions                                                 */
@@ -449,6 +450,7 @@ const tabs: { id: TabId; label: string }[] = [
   { id: "style", label: "Style" },
   { id: "layout", label: "Layout" },
   { id: "theme", label: "Theme" },
+  { id: "quality", label: "Quality" },
   { id: "notes", label: "Notes" },
 ];
 
@@ -487,6 +489,7 @@ export function Inspector() {
           <LayoutTab slide={slide} slideIndex={currentSlideIndex} />
         )}
         {activeTab === "theme" && <ThemeTab />}
+        {activeTab === "quality" && <QualityTab />}
         {activeTab === "notes" && <NotesTab slide={slide} />}
       </div>
     </div>

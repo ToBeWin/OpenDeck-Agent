@@ -7,8 +7,19 @@ import { CommandBar } from "./components/CommandBar";
 import { StatusBar } from "./components/StatusBar";
 import { SettingsPanel } from "./components/SettingsPanel";
 import { PresentationMode } from "./components/PresentationMode";
+import { ErrorBoundary } from "./components/ErrorBoundary";
+import { ToastProvider, useShowToast } from "./components/Toast";
 import { useStore } from "./store";
 import "./App.css";
+
+function ErrorWatcher() {
+  const error = useStore((s) => s.error);
+  const showToast = useShowToast();
+  useEffect(() => {
+    if (error) showToast(error, "error");
+  }, [error, showToast]);
+  return null;
+}
 
 function App() {
   const settingsOpen = useStore((s) => s.settingsOpen);
@@ -22,6 +33,9 @@ function App() {
   const redo = useStore((s) => s.redo);
   const deck = useStore((s) => s.deck);
   const commandBarOpen = useStore((s) => s.commandBarOpen);
+  const saveProject = useStore((s) => s.saveProject);
+  const loadProject = useStore((s) => s.loadProject);
+  const newProject = useStore((s) => s.newProject);
   const [presenting, setPresenting] = useState(false);
 
   useEffect(() => {
@@ -45,10 +59,24 @@ function App() {
         return;
       }
 
+      // Ctrl/Cmd+S — save project
+      if (mod && e.key === "s") {
+        e.preventDefault();
+        if (deck) saveProject();
+        return;
+      }
+
+      // Ctrl/Cmd+O — open project
+      if (mod && e.key === "o") {
+        e.preventDefault();
+        loadProject();
+        return;
+      }
+
       // Ctrl/Cmd+N — new deck
       if (mod && e.key === "n") {
         e.preventDefault();
-        setDeck(null);
+        newProject();
         return;
       }
 
@@ -104,24 +132,33 @@ function App() {
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [deck, commandBarOpen, presenting, toggleCommandBar, toggleSettings, setDeck, nextSlide, prevSlide, exportCurrentDeck, undo, redo]);
+  }, [deck, commandBarOpen, presenting, toggleCommandBar, toggleSettings, newProject, nextSlide, prevSlide, exportCurrentDeck, undo, redo, saveProject, loadProject]);
 
   if (presenting) {
     return <PresentationMode onClose={() => setPresenting(false)} />;
   }
 
   return (
-    <div className="app">
-      <TopBar onPresent={() => setPresenting(true)} />
-      <div className="workspace">
-        <DeckOutline />
-        <SlidePreview />
-        <Inspector />
+    <ToastProvider>
+      <ErrorWatcher />
+      <div className="app">
+        <TopBar onPresent={() => setPresenting(true)} />
+        <div className="workspace">
+          <ErrorBoundary>
+            <DeckOutline />
+          </ErrorBoundary>
+          <ErrorBoundary>
+            <SlidePreview />
+          </ErrorBoundary>
+          <ErrorBoundary>
+            <Inspector />
+          </ErrorBoundary>
+        </div>
+        <CommandBar />
+        <StatusBar />
+        {settingsOpen && <SettingsPanel onClose={toggleSettings} />}
       </div>
-      <CommandBar />
-      <StatusBar />
-      {settingsOpen && <SettingsPanel onClose={toggleSettings} />}
-    </div>
+    </ToastProvider>
   );
 }
 

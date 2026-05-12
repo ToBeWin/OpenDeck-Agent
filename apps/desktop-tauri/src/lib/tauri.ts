@@ -15,12 +15,16 @@ export interface RenderResult {
 }
 
 export interface GenerateOptions {
+  [key: string]: unknown;
   provider?: string;
   purpose?: string;
   audience?: string;
   language?: string;
   slideCount?: number;
   theme?: string;
+  apiKey?: string;
+  baseUrl?: string;
+  model?: string;
 }
 
 export interface ProviderStatus {
@@ -68,4 +72,27 @@ export async function checkProvider(name: string): Promise<ProviderStatus> {
 
 export async function listProviders(): Promise<ProviderList> {
   return invoke("list_providers");
+}
+
+// ── Project Persistence ──
+
+export async function saveProject(
+  deck: unknown,
+  name?: string
+): Promise<string> {
+  return invoke("save_project", { deckJson: deck, name: name ?? null });
+}
+
+export async function loadProject(path: string): Promise<unknown> {
+  return invoke("load_project", { path });
+}
+
+export async function listProjects(): Promise<
+  Array<{ path: string; name: string }>
+> {
+  return invoke("list_projects");
+}
+
+export async function deleteProject(path: string): Promise<void> {
+  return invoke("delete_project", { path });
 }

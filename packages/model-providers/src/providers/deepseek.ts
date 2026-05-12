@@ -3,43 +3,41 @@ import type {
   TextCompletionRequest,
   TextCompletionResult,
 } from "../types";
-import { buildOpenAIMessages } from "./vision-utils";
 
-export interface OpenAICompatProviderOptions {
-  baseUrl?: string;
+export interface DeepSeekProviderOptions {
   apiKey?: string;
+  baseUrl?: string;
   model?: string;
 }
 
-export function createOpenAICompatProvider(
-  options: OpenAICompatProviderOptions = {}
+const DEEPSEEK_DEFAULT_BASE_URL = "https://api.deepseek.com/v1";
+const DEEPSEEK_DEFAULT_MODEL = "deepseek-chat";
+
+export function createDeepSeekProvider(
+  options: DeepSeekProviderOptions = {}
 ): TextModelProvider {
-  const baseUrl = options.baseUrl ?? "https://api.openai.com";
+  const baseUrl = options.baseUrl ?? DEEPSEEK_DEFAULT_BASE_URL;
   const apiKey = options.apiKey ?? "";
-  const model = options.model ?? "gpt-4o-mini";
+  const model = options.model ?? DEEPSEEK_DEFAULT_MODEL;
 
   return {
-    id: `openai-compat-${model}`,
-    name: `OpenAI Compat (${model})`,
+    id: `deepseek-${model}`,
+    name: `DeepSeek (${model})`,
     type: "cloud",
     supportsStreaming: true,
     supportsTools: true,
-    supportsVision: true,
+    supportsVision: false,
 
     async complete(req: TextCompletionRequest): Promise<TextCompletionResult> {
-      const messages = buildOpenAIMessages(req.prompt, req.systemPrompt, req.images);
-
-      const body: Record<string, unknown> = {
-        model,
-        messages,
-      };
-
-      if (req.maxTokens !== undefined) {
-        body.max_tokens = req.maxTokens;
+      const messages: Array<{ role: string; content: string }> = [];
+      if (req.systemPrompt) {
+        messages.push({ role: "system", content: req.systemPrompt });
       }
-      if (req.temperature !== undefined) {
-        body.temperature = req.temperature;
-      }
+      messages.push({ role: "user", content: req.prompt });
+
+      const body: Record<string, unknown> = { model, messages };
+      if (req.maxTokens !== undefined) body.max_tokens = req.maxTokens;
+      if (req.temperature !== undefined) body.temperature = req.temperature;
 
       const headers: Record<string, string> = {
         "Content-Type": "application/json",
@@ -50,22 +48,20 @@ export function createOpenAICompatProvider(
 
       let response: Response;
       try {
-        response = await fetch(`${baseUrl}/v1/chat/completions`, {
+        response = await fetch(`${baseUrl}/chat/completions`, {
           method: "POST",
           headers,
           body: JSON.stringify(body),
         });
       } catch (err) {
         throw new Error(
-          `Failed to connect to OpenAI-compatible API at ${baseUrl}: ${err instanceof Error ? err.message : String(err)}`
+          `Failed to connect to DeepSeek API at ${baseUrl}: ${err instanceof Error ? err.message : String(err)}`
         );
       }
 
       if (!response.ok) {
         const errorText = await response.text().catch(() => "unknown error");
-        throw new Error(
-          `OpenAI API error (${response.status}): ${errorText}`
-        );
+        throw new Error(`DeepSeek API error (${response.status}): ${errorText}`);
       }
 
       const data = (await response.json()) as {

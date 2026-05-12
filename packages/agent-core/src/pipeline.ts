@@ -12,15 +12,20 @@ export interface GenerateDeckOptions {
   slideCount?: number;
   theme?: string;
   provider: TextModelProvider;
-  /** Enable quality feedback loop (re-generate low-scoring slides) */
   qualityLoop?: boolean;
-  /** Minimum quality score to accept (default 60) */
   minQualityScore?: number;
+}
+
+export interface PipelineWarning {
+  step: string;
+  message: string;
 }
 
 export async function generateDeck(
   options: GenerateDeckOptions
 ): Promise<Deck> {
+  const warnings: PipelineWarning[] = [];
+
   // 1. Parse intent
   const intent = await parseIntent(options.provider, options.prompt);
 
@@ -51,7 +56,6 @@ export async function generateDeck(
       const minScore = options.minQualityScore ?? 60;
 
       if (score.overall < minScore) {
-        // Re-generate slides with low scores
         for (const slideScore of score.slides) {
           if (slideScore.overall < minScore) {
             const slideIndex = deck.slides.findIndex(
@@ -70,36 +74,45 @@ export async function generateDeck(
                   if (improvedSlide.slides[0]) {
                     deck.slides[slideIndex] = improvedSlide.slides[0];
                   }
-                } catch {
-                  // Keep original slide if re-generation fails
+                } catch (err) {
+                  warnings.push({
+                    step: "quality.regen",
+                    message: `Failed to regenerate slide ${slideScore.slideId}: ${err instanceof Error ? err.message : String(err)}`,
+                  });
                 }
               }
             }
           }
         }
       }
-    } catch {
-      // Quality package not available, skip quality loop
+    } catch (err) {
+      warnings.push({
+        step: "quality",
+        message: `Quality check skipped: ${err instanceof Error ? err.message : String(err)}`,
+      });
     }
   }
 
-  // 5. Visual planning (add position suggestions)
+  // 5. Visual planning
   try {
     const { planVisuals } = await import("@opendeck/visual-planner");
     const visualPlans = planVisuals(deck.slides);
-    // Store visual plans in metadata for the renderer to use
     deck = {
       ...deck,
       metadata: {
         ...deck.metadata,
         visualPlans,
+        warnings,
       } as typeof deck.metadata,
     };
-  } catch {
-    // Visual planner not available, skip
+  } catch (err) {
+    warnings.push({
+      step: "visual-planner",
+      message: `Visual planning skipped: ${err instanceof Error ? err.message : String(err)}`,
+    });
   }
 
-  // 6. Layout engine (position elements)
+  // 6. Layout engine
   try {
     const { LayoutEngine } = await import("@opendeck/layout-engine");
     const engine = new LayoutEngine();
@@ -128,8 +141,22 @@ export async function generateDeck(
         } as typeof slide;
       }),
     };
-  } catch {
-    // Layout engine not available, skip
+  } catch (err) {
+    warnings.push({
+      step: "layout-engine",
+      message: `Layout engine skipped: ${err instanceof Error ? err.message : String(err)}`,
+    });
+  }
+
+  // Attach warnings to deck metadata if not already set
+  if (!deck.metadata || !(deck.metadata as Record<string, unknown>).warnings) {
+    deck = {
+      ...deck,
+      metadata: {
+        ...(deck.metadata as Record<string, unknown>),
+        warnings,
+      } as typeof deck.metadata,
+    };
   }
 
   return deck;

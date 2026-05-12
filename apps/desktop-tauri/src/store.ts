@@ -13,13 +13,30 @@ interface AppState {
   settingsOpen: boolean;
   history: DeckData[];
   future: DeckData[];
+  projectPath: string | null;
+  dirty: boolean;
   providerConfig: {
-    provider: "mock" | "ollama" | "openai";
+    provider: "mock" | "ollama" | "openai" | "anthropic" | "gemini" | "deepseek" | "kimi" | "qwen" | "glm-domestic" | "glm-international" | "minimax-domestic" | "minimax-international" | "openrouter" | "lmstudio" | "vllm";
     ollamaBaseUrl: string;
     ollamaModel: string;
     openaiApiKey: string;
     openaiBaseUrl: string;
     openaiModel: string;
+    kimiApiKey: string;
+    kimiBaseUrl: string;
+    kimiModel: string;
+    glmDomesticApiKey: string;
+    glmDomesticBaseUrl: string;
+    glmDomesticModel: string;
+    glmInternationalApiKey: string;
+    glmInternationalBaseUrl: string;
+    glmInternationalModel: string;
+    minimaxDomesticApiKey: string;
+    minimaxDomesticBaseUrl: string;
+    minimaxDomesticModel: string;
+    minimaxInternationalApiKey: string;
+    minimaxInternationalBaseUrl: string;
+    minimaxInternationalModel: string;
     language: "zh" | "en" | "bilingual";
     theme: string;
   };
@@ -43,6 +60,9 @@ interface AppState {
   exportCurrentDeck: (format?: "pptx" | "pdf" | "html") => Promise<void>;
   undo: () => void;
   redo: () => void;
+  saveProject: () => Promise<void>;
+  loadProject: () => Promise<void>;
+  newProject: () => void;
 }
 
 export const useStore = create<AppState>((set, get) => ({
@@ -56,6 +76,8 @@ export const useStore = create<AppState>((set, get) => ({
   settingsOpen: false,
   history: [],
   future: [],
+  projectPath: null,
+  dirty: false,
   providerConfig: {
     provider: "mock",
     ollamaBaseUrl: "http://localhost:11434",
@@ -63,11 +85,47 @@ export const useStore = create<AppState>((set, get) => ({
     openaiApiKey: "",
     openaiBaseUrl: "https://api.openai.com/v1",
     openaiModel: "gpt-4o",
+    kimiApiKey: "",
+    kimiBaseUrl: "https://api.moonshot.cn/v1",
+    kimiModel: "moonshot-v1-8k",
+    glmDomesticApiKey: "",
+    glmDomesticBaseUrl: "https://open.bigmodel.cn/api/paas/v4",
+    glmDomesticModel: "glm-4-plus",
+    glmInternationalApiKey: "",
+    glmInternationalBaseUrl: "https://open.bigmodel.cn/api/paas/v4",
+    glmInternationalModel: "glm-4-plus",
+    minimaxDomesticApiKey: "",
+    minimaxDomesticBaseUrl: "https://api.minimax.chat/v1",
+    minimaxDomesticModel: "MiniMax-Text-01",
+    minimaxInternationalApiKey: "",
+    minimaxInternationalBaseUrl: "https://api.minimax.chat/v1",
+    minimaxInternationalModel: "MiniMax-Text-01",
+    anthropicApiKey: "",
+    anthropicBaseUrl: "https://api.anthropic.com/v1",
+    anthropicModel: "claude-3-5-sonnet-20241022",
+    geminiApiKey: "",
+    geminiBaseUrl: "https://generativelanguage.googleapis.com/v1beta",
+    geminiModel: "gemini-1.5-flash",
+    deepseekApiKey: "",
+    deepseekBaseUrl: "https://api.deepseek.com/v1",
+    deepseekModel: "deepseek-chat",
+    qwenApiKey: "",
+    qwenBaseUrl: "https://dashscope.aliyuncs.com/compatible-mode/v1",
+    qwenModel: "qwen-plus",
+    openrouterApiKey: "",
+    openrouterBaseUrl: "https://openrouter.ai/api/v1",
+    openrouterModel: "openai/gpt-4o-mini",
+    lmstudioApiKey: "",
+    lmstudioBaseUrl: "http://localhost:1234/v1",
+    lmstudioModel: "local-model",
+    vllmApiKey: "",
+    vllmBaseUrl: "http://localhost:8000/v1",
+    vllmModel: "meta-llama/Meta-Llama-3-8B-Instruct",
     language: "zh",
     theme: "Bloomberg Dark",
   },
 
-  setDeck: (deck) => set({ deck, currentSlideIndex: 0, error: null, history: [], future: [] }),
+  setDeck: (deck) => set({ deck, currentSlideIndex: 0, error: null, history: [], future: [], dirty: false }),
 
   updateSlideContent: (slideIndex, elementId, content) => {
     const { deck, history } = get();
@@ -81,7 +139,7 @@ export const useStore = create<AppState>((set, get) => ({
         ),
       };
     });
-    set({ deck: { ...deck, slides }, history: [...history, deck].slice(-50), future: [] });
+    set({ deck: { ...deck, slides }, history: [...history, deck].slice(-50), future: [], dirty: true });
   },
 
   updateSlideElementStyle: (slideIndex, elementId, style) => {
@@ -108,7 +166,7 @@ export const useStore = create<AppState>((set, get) => ({
       if (i !== slideIndex) return slide;
       return { ...slide, layout };
     });
-    set({ deck: { ...deck, slides }, history: [...history, deck].slice(-50), future: [] });
+    set({ deck: { ...deck, slides }, history: [...history, deck].slice(-50), future: [], dirty: true });
   },
 
   setCurrentSlide: (index) => {
@@ -170,20 +228,94 @@ export const useStore = create<AppState>((set, get) => ({
       "Minimal Light": "minimal_light",
       "Tech Gradient": "tech_gradient",
     };
+
+    // Build provider-specific config
+    const providerConfig: Record<string, string | undefined> = {
+      provider: config.provider,
+      language: config.language,
+      theme: themeMap[config.theme] ?? "bloomberg_dark",
+    };
+
+    // Pass through API config based on selected provider
+    switch (config.provider) {
+      case "openai":
+        providerConfig["apiKey"] = config.openaiApiKey;
+        providerConfig["baseUrl"] = config.openaiBaseUrl;
+        providerConfig["model"] = config.openaiModel;
+        break;
+      case "anthropic":
+        providerConfig["apiKey"] = config.anthropicApiKey;
+        providerConfig["baseUrl"] = config.anthropicBaseUrl;
+        providerConfig["model"] = config.anthropicModel;
+        break;
+      case "gemini":
+        providerConfig["apiKey"] = config.geminiApiKey;
+        providerConfig["baseUrl"] = config.geminiBaseUrl;
+        providerConfig["model"] = config.geminiModel;
+        break;
+      case "deepseek":
+        providerConfig["apiKey"] = config.deepseekApiKey;
+        providerConfig["baseUrl"] = config.deepseekBaseUrl;
+        providerConfig["model"] = config.deepseekModel;
+        break;
+      case "kimi":
+        providerConfig["apiKey"] = config.kimiApiKey;
+        providerConfig["baseUrl"] = config.kimiBaseUrl;
+        providerConfig["model"] = config.kimiModel;
+        break;
+      case "qwen":
+        providerConfig["apiKey"] = config.qwenApiKey;
+        providerConfig["baseUrl"] = config.qwenBaseUrl;
+        providerConfig["model"] = config.qwenModel;
+        break;
+      case "glm-domestic":
+        providerConfig["apiKey"] = config.glmDomesticApiKey;
+        providerConfig["baseUrl"] = config.glmDomesticBaseUrl;
+        providerConfig["model"] = config.glmDomesticModel;
+        break;
+      case "glm-international":
+        providerConfig["apiKey"] = config.glmInternationalApiKey;
+        providerConfig["baseUrl"] = config.glmInternationalBaseUrl;
+        providerConfig["model"] = config.glmInternationalModel;
+        break;
+      case "minimax-domestic":
+        providerConfig["apiKey"] = config.minimaxDomesticApiKey;
+        providerConfig["baseUrl"] = config.minimaxDomesticBaseUrl;
+        providerConfig["model"] = config.minimaxDomesticModel;
+        break;
+      case "minimax-international":
+        providerConfig["apiKey"] = config.minimaxInternationalApiKey;
+        providerConfig["baseUrl"] = config.minimaxInternationalBaseUrl;
+        providerConfig["model"] = config.minimaxInternationalModel;
+        break;
+      case "openrouter":
+        providerConfig["apiKey"] = config.openrouterApiKey;
+        providerConfig["baseUrl"] = config.openrouterBaseUrl;
+        providerConfig["model"] = config.openrouterModel;
+        break;
+      case "lmstudio":
+        providerConfig["apiKey"] = config.lmstudioApiKey;
+        providerConfig["baseUrl"] = config.lmstudioBaseUrl;
+        providerConfig["model"] = config.lmstudioModel;
+        break;
+      case "vllm":
+        providerConfig["apiKey"] = config.vllmApiKey;
+        providerConfig["baseUrl"] = config.vllmBaseUrl;
+        providerConfig["model"] = config.vllmModel;
+        break;
+    }
+
     set({ loading: true, error: null, generationStep: "理解需求..." });
     try {
       set({ generationStep: "规划结构..." });
       const { generateDeck } = await import("./lib/tauri");
-      const result = await generateDeck(prompt, {
-        provider: config.provider,
-        language: config.language,
-        theme: themeMap[config.theme] ?? "bloomberg_dark",
-      });
+      const result = await generateDeck(prompt, providerConfig);
       const deck = (result as { deck: DeckData }).deck;
+      if (!deck) throw new Error("Generation returned empty result");
       set({ deck, currentSlideIndex: 0, generationStep: "完成" });
-    } catch {
-      // Fallback: load sample deck (web dev mode or invoke failed)
-      set({ deck: sampleDeck, currentSlideIndex: 0, generationStep: "完成" });
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      set({ error: msg, generationStep: null });
     } finally {
       set({ loading: false });
     }
@@ -254,6 +386,57 @@ export const useStore = create<AppState>((set, get) => ({
       deck: next,
       future: future.slice(1),
       history: deck ? [...history, deck] : history,
+    });
+  },
+
+  saveProject: async () => {
+    const { deck, projectPath } = get();
+    if (!deck) return;
+    set({ loading: true, error: null });
+    try {
+      const { saveProject } = await import("./lib/tauri");
+      const path = await saveProject(deck, deck.title);
+      set({ projectPath: path as string, dirty: false, loading: false });
+    } catch (e) {
+      set({ error: String(e), loading: false });
+    }
+  },
+
+  loadProject: async () => {
+    set({ loading: true, error: null });
+    try {
+      const { loadProject, listProjects } = await import("./lib/tauri");
+      const projects = await listProjects();
+      if (projects.length === 0) {
+        set({ error: "No saved projects found", loading: false });
+        return;
+      }
+      // Load the most recent project
+      const latest = projects[projects.length - 1];
+      const deck = (await loadProject(latest.path)) as DeckData;
+      set({
+        deck,
+        projectPath: latest.path,
+        dirty: false,
+        currentSlideIndex: 0,
+        history: [],
+        future: [],
+        loading: false,
+      });
+    } catch (e) {
+      set({ error: String(e), loading: false });
+    }
+  },
+
+  newProject: () => {
+    set({
+      deck: null,
+      projectPath: null,
+      dirty: false,
+      currentSlideIndex: 0,
+      history: [],
+      future: [],
+      error: null,
     });
   },
 }));

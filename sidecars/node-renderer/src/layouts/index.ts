@@ -17,6 +17,9 @@ import { renderCaseStudy } from "./case-study";
 import { renderQuote } from "./quote";
 import { renderSummary } from "./summary";
 import { renderImageText } from "./image-text";
+import { renderFullBleedImage } from "./full-bleed-image";
+import { renderConsultingSummary } from "./consulting-summary";
+import { renderAppendix } from "./appendix";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -98,6 +101,15 @@ const layoutMap: Record<string, LayoutRenderer> = {
   // Image + text
   image_left_text_right: renderImageText,
   image_right_text_left: renderImageText,
+
+  // Full bleed image
+  full_bleed_image: renderFullBleedImage,
+
+  // Consulting summary
+  consulting_summary: renderConsultingSummary,
+
+  // Appendix
+  appendix: renderAppendix,
 };
 
 // Fallback for section_divider and other unhandled layouts

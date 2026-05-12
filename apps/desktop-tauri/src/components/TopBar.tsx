@@ -8,9 +8,13 @@ interface TopBarProps {
 export function TopBar({ onPresent }: TopBarProps) {
   const deck = useStore((s) => s.deck);
   const loading = useStore((s) => s.loading);
+  const dirty = useStore((s) => s.dirty);
   const setDeck = useStore((s) => s.setDeck);
   const toggleSettings = useStore((s) => s.toggleSettings);
   const exportCurrentDeck = useStore((s) => s.exportCurrentDeck);
+  const saveProject = useStore((s) => s.saveProject);
+  const loadProject = useStore((s) => s.loadProject);
+  const newProject = useStore((s) => s.newProject);
 
   const [exportOpen, setExportOpen] = useState(false);
   const exportRef = useRef<HTMLDivElement>(null);
@@ -40,9 +44,25 @@ export function TopBar({ onPresent }: TopBarProps) {
         {deck ? (
           <>
             <span className="top-bar-theme">{deck.theme.name}</span>
+            <span className="top-bar-dirty">{dirty ? "●" : ""}</span>
             <button
               className="top-bar-btn"
-              onClick={() => setDeck(null)}
+              onClick={saveProject}
+              title="Save (Ctrl+S)"
+              disabled={loading}
+            >
+              Save
+            </button>
+            <button
+              className="top-bar-btn"
+              onClick={loadProject}
+              title="Open (Ctrl+O)"
+            >
+              Open
+            </button>
+            <button
+              className="top-bar-btn"
+              onClick={newProject}
               title="New Deck (Ctrl+N)"
             >
               New Deck

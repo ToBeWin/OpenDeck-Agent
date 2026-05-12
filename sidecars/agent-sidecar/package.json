@@ -2,10 +2,11 @@
   "name": "@opendeck/agent-sidecar",
   "version": "0.1.0",
   "private": true,
-  "main": "src/index.ts",
+  "main": "dist/index.js",
   "scripts": {
-    "start": "tsx src/index.ts",
-    "build": "tsc"
+    "start": "node dist/index.js",
+    "build": "tsc",
+    "dev": "tsx src/index.ts"
   },
   "dependencies": {
     "@opendeck/agent-core": "workspace:*",

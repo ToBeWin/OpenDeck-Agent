@@ -14,6 +14,7 @@ export async function getStructuredOutput<T>(
         prompt,
         systemPrompt: req.systemPrompt,
         temperature: 0.1,
+        images: req.images,
       });
 
       // Try to extract JSON from response

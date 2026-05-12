@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useStore } from "../store";
 import { WelcomeView } from "./WelcomeView";
 import type { SlideData, ElementData, DeckTheme } from "../types";
@@ -678,6 +678,33 @@ function GenerationProgress({ step }: { step: string }) {
   );
 }
 
+function QualityBadge() {
+  const deck = useStore((s) => s.deck);
+  const [score, setScore] = useState<number | null>(null);
+
+  useEffect(() => {
+    if (!deck) { setScore(null); return; }
+    let cancelled = false;
+    const run = async () => {
+      try {
+        const { scoreDeck } = await import("@opendeck/quality");
+        const result = scoreDeck(deck as never) as { overall: number };
+        if (!cancelled) setScore(result.overall);
+      } catch { if (!cancelled) setScore(null); }
+    };
+    run();
+    return () => { cancelled = true; };
+  }, [deck]);
+
+  if (score === null) return null;
+  const color = score >= 80 ? "#00c853" : score >= 60 ? "#ffab00" : "#ff1744";
+  return (
+    <span className="quality-badge" style={{ color }} title={`Quality: ${score}/100`}>
+      ● {score}
+    </span>
+  );
+}
+
 export function SlidePreview() {
   const deck = useStore((s) => s.deck);
   const currentSlideIndex = useStore((s) => s.currentSlideIndex);
@@ -724,6 +751,7 @@ export function SlidePreview() {
         <span className="slide-nav-indicator">
           {currentSlideIndex + 1} / {deck.slides.length}
         </span>
+        <QualityBadge />
         <button
           className="slide-nav-btn"
           onClick={nextSlide}
