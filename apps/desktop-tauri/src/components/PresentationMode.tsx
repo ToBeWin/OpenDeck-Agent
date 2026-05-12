@@ -1,4 +1,5 @@
 import { useEffect, useCallback, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useStore } from "../store";
 import type { SlideData, ElementData, DeckTheme } from "../types";
 
@@ -306,6 +307,7 @@ interface PresentationModeProps {
 }
 
 export function PresentationMode({ onClose }: PresentationModeProps) {
+  const { t } = useTranslation();
   const deck = useStore((s) => s.deck);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [showControls, setShowControls] = useState(false);
@@ -415,7 +417,7 @@ export function PresentationMode({ onClose }: PresentationModeProps) {
               onClose();
             }}
           >
-            Exit (Esc)
+            {t("presentation.exit")} (Esc)
           </button>
         </div>
       )}

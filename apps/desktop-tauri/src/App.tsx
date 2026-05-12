@@ -11,6 +11,7 @@ import { ErrorBoundary } from "./components/ErrorBoundary";
 import { ToastProvider, useShowToast } from "./components/Toast";
 import { useStore } from "./store";
 import "./App.css";
+import "./i18n";
 
 function ErrorWatcher() {
   const error = useStore((s) => s.error);
@@ -25,7 +26,6 @@ function App() {
   const settingsOpen = useStore((s) => s.settingsOpen);
   const toggleSettings = useStore((s) => s.toggleSettings);
   const toggleCommandBar = useStore((s) => s.toggleCommandBar);
-  const setDeck = useStore((s) => s.setDeck);
   const nextSlide = useStore((s) => s.nextSlide);
   const prevSlide = useStore((s) => s.prevSlide);
   const exportCurrentDeck = useStore((s) => s.exportCurrentDeck);

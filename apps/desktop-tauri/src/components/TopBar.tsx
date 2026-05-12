@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import { useStore } from "../store";
 
 interface TopBarProps {
@@ -6,10 +7,11 @@ interface TopBarProps {
 }
 
 export function TopBar({ onPresent }: TopBarProps) {
+  const { t } = useTranslation();
   const deck = useStore((s) => s.deck);
   const loading = useStore((s) => s.loading);
   const dirty = useStore((s) => s.dirty);
-  const setDeck = useStore((s) => s.setDeck);
+
   const toggleSettings = useStore((s) => s.toggleSettings);
   const exportCurrentDeck = useStore((s) => s.exportCurrentDeck);
   const saveProject = useStore((s) => s.saveProject);
@@ -35,7 +37,7 @@ export function TopBar({ onPresent }: TopBarProps) {
     <div className="top-bar">
       <div className="top-bar-left">
         <span className="top-bar-logo">OD</span>
-        <span className="top-bar-app-name">OpenDeck Agent</span>
+        <span className="top-bar-app-name">{t("app.name")}</span>
       </div>
       <div className="top-bar-center">
         {deck && <span className="top-bar-title">{deck.title}</span>}
@@ -48,32 +50,32 @@ export function TopBar({ onPresent }: TopBarProps) {
             <button
               className="top-bar-btn"
               onClick={saveProject}
-              title="Save (Ctrl+S)"
+              title={t("topbar.tooltip_save")}
               disabled={loading}
             >
-              Save
+              {t("topbar.save")}
             </button>
             <button
               className="top-bar-btn"
               onClick={loadProject}
-              title="Open (Ctrl+O)"
+              title={t("topbar.tooltip_open")}
             >
-              Open
+              {t("topbar.open")}
             </button>
             <button
               className="top-bar-btn"
               onClick={newProject}
-              title="New Deck (Ctrl+N)"
+              title={t("topbar.tooltip_new")}
             >
-              New Deck
+              {t("topbar.new")}
             </button>
             {onPresent && (
               <button
                 className="top-bar-btn"
                 onClick={onPresent}
-                title="Present (Ctrl+P)"
+                title={t("topbar.tooltip_present")}
               >
-                Present
+                {t("topbar.present")}
               </button>
             )}
             <div className="export-dropdown" ref={exportRef}>
@@ -81,9 +83,9 @@ export function TopBar({ onPresent }: TopBarProps) {
                 className="top-bar-btn top-bar-btn-accent"
                 onClick={() => setExportOpen(!exportOpen)}
                 disabled={loading}
-                title="Export"
+                title={t("topbar.export")}
               >
-                {loading ? "Exporting..." : "Export"}
+                {loading ? t("topbar.exporting") : t("topbar.export")}
               </button>
               {exportOpen && (
                 <div className="export-menu">
@@ -94,8 +96,8 @@ export function TopBar({ onPresent }: TopBarProps) {
                       setExportOpen(false);
                     }}
                   >
-                    <span className="export-format">PPTX</span>
-                    <span className="export-desc">Editable PowerPoint</span>
+                    <span className="export-format">{t("topbar.export_pptx")}</span>
+                    <span className="export-desc">{t("topbar.export_pptx_desc")}</span>
                   </button>
                   <button
                     className="export-menu-item"
@@ -104,8 +106,8 @@ export function TopBar({ onPresent }: TopBarProps) {
                       setExportOpen(false);
                     }}
                   >
-                    <span className="export-format">PDF</span>
-                    <span className="export-desc">Portable Document</span>
+                    <span className="export-format">{t("topbar.export_pdf")}</span>
+                    <span className="export-desc">{t("topbar.export_pdf_desc")}</span>
                   </button>
                   <button
                     className="export-menu-item"
@@ -114,8 +116,8 @@ export function TopBar({ onPresent }: TopBarProps) {
                       setExportOpen(false);
                     }}
                   >
-                    <span className="export-format">HTML</span>
-                    <span className="export-desc">Single-file Web Page</span>
+                    <span className="export-format">{t("topbar.export_html")}</span>
+                    <span className="export-desc">{t("topbar.export_html_desc")}</span>
                   </button>
                 </div>
               )}
@@ -125,7 +127,7 @@ export function TopBar({ onPresent }: TopBarProps) {
           <button
             className="top-bar-btn"
             onClick={toggleSettings}
-            title="Settings (Ctrl+,)"
+            title={t("topbar.tooltip_settings")}
           >
             &#9881;
           </button>
@@ -134,7 +136,7 @@ export function TopBar({ onPresent }: TopBarProps) {
           <button
             className="top-bar-btn"
             onClick={toggleSettings}
-            title="Settings (Ctrl+,)"
+            title={t("topbar.tooltip_settings")}
           >
             &#9881;
           </button>

@@ -1,4 +1,5 @@
 import { Component, type ReactNode } from "react";
+import i18n from "i18next";
 
 interface ErrorBoundaryProps {
   children: ReactNode;
@@ -27,12 +28,12 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
       return (
         <div className="error-boundary">
           <div className="error-boundary-content">
-            <h3>Something went wrong</h3>
+            <h3>{i18n.t("error.boundary_title")}</h3>
             <p className="error-boundary-message">
-              {this.state.error?.message ?? "Unknown error"}
+              {this.state.error?.message ?? i18n.t("error.boundary_message")}
             </p>
             <button className="settings-btn" onClick={this.handleReset}>
-              Try Again
+              {i18n.t("error.boundary_retry")}
             </button>
           </div>
         </div>

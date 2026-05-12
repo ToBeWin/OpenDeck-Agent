@@ -1,4 +1,5 @@
 import { useState, useCallback } from "react";
+import { useTranslation } from "react-i18next";
 import { useStore } from "../store";
 import type { SlideData, ElementData } from "../types";
 import { QualityTab } from "./QualityTab";
@@ -9,46 +10,50 @@ type TabId = "structure" | "content" | "style" | "layout" | "theme" | "notes" | 
 /*  Layout definitions                                                 */
 /* ------------------------------------------------------------------ */
 
-const LAYOUTS: { id: string; label: string }[] = [
-  { id: "hero_title", label: "Hero Title" },
-  { id: "title_content", label: "Title + Content" },
-  { id: "two_column", label: "Two Column" },
-  { id: "three_column", label: "Three Column" },
-  { id: "big_number", label: "Big Number" },
-  { id: "comparison_matrix", label: "Comparison" },
-  { id: "timeline_horizontal", label: "Timeline (H)" },
-  { id: "timeline_vertical", label: "Timeline (V)" },
-  { id: "process_flow", label: "Process Flow" },
-  { id: "chart_focus", label: "Chart Focus" },
-  { id: "image_left_text_right", label: "Image Left" },
-  { id: "image_right_text_left", label: "Image Right" },
-  { id: "quote_focus", label: "Quote" },
-  { id: "grid_cards", label: "Grid Cards" },
-  { id: "case_study", label: "Case Study" },
-  { id: "section_divider", label: "Section" },
-  { id: "problem", label: "Problem" },
-  { id: "solution", label: "Solution" },
-  { id: "closing", label: "Closing" },
-];
+function useLayouts() {
+  const { t } = useTranslation();
+  return [
+    { id: "hero_title", label: t("layout.hero_title") },
+    { id: "title_content", label: t("layout.title_content") },
+    { id: "two_column", label: t("layout.two_column") },
+    { id: "three_column", label: t("layout.three_column") },
+    { id: "big_number", label: t("layout.big_number") },
+    { id: "comparison_matrix", label: t("layout.comparison") },
+    { id: "timeline_horizontal", label: t("layout.timeline_h") },
+    { id: "timeline_vertical", label: t("layout.timeline_v") },
+    { id: "process_flow", label: t("layout.process_flow") },
+    { id: "chart_focus", label: t("layout.chart_focus") },
+    { id: "image_left_text_right", label: t("layout.image_left") },
+    { id: "image_right_text_left", label: t("layout.image_right") },
+    { id: "quote_focus", label: t("layout.quote") },
+    { id: "grid_cards", label: t("layout.grid_cards") },
+    { id: "case_study", label: t("layout.case_study") },
+    { id: "section_divider", label: t("layout.section") },
+    { id: "problem", label: t("layout.problem") },
+    { id: "solution", label: t("layout.solution") },
+    { id: "closing", label: t("layout.closing") },
+  ];
+}
 
 /* ------------------------------------------------------------------ */
 /*  Structure Tab                                                      */
 /* ------------------------------------------------------------------ */
 
 function StructureTab({ slide }: { slide: SlideData }) {
+  const { t } = useTranslation();
   return (
     <div className="inspector-section">
       <div className="inspector-field">
-        <span className="inspector-label">Type</span>
+        <span className="inspector-label">{t("inspector.label_type")}</span>
         <span className="inspector-value">{slide.type}</span>
       </div>
       <div className="inspector-field">
-        <span className="inspector-label">Layout</span>
+        <span className="inspector-label">{t("inspector.label_layout")}</span>
         <span className="inspector-value">{slide.layout}</span>
       </div>
       {slide.communicationGoal && (
         <div className="inspector-field">
-          <span className="inspector-label">Goal</span>
+          <span className="inspector-label">{t("inspector.label_goal")}</span>
           <span className="inspector-value inspector-value-wrap">
             {slide.communicationGoal}
           </span>
@@ -56,14 +61,14 @@ function StructureTab({ slide }: { slide: SlideData }) {
       )}
       {slide.mainMessage && (
         <div className="inspector-field">
-          <span className="inspector-label">Message</span>
+          <span className="inspector-label">{t("inspector.label_message")}</span>
           <span className="inspector-value inspector-value-wrap">
             {slide.mainMessage}
           </span>
         </div>
       )}
       <div className="inspector-divider" />
-      <span className="inspector-section-title">Elements</span>
+      <span className="inspector-section-title">{t("inspector.section_elements")}</span>
       <div className="inspector-element-list">
         {slide.elements.map((el) => (
           <ElementRow key={el.id} el={el} />
@@ -103,10 +108,11 @@ function ContentTab({
   slide: SlideData;
   slideIndex: number;
 }) {
+  const { t } = useTranslation();
   return (
     <div className="inspector-section">
       {slide.elements.map((el) => (
-        <ContentField key={el.id} el={el} slideIndex={slideIndex} />
+        <ContentField key={el.id} el={el} slideIndex={slideIndex} t={t} />
       ))}
     </div>
   );
@@ -115,9 +121,11 @@ function ContentTab({
 function ContentField({
   el,
   slideIndex,
+  t,
 }: {
   el: ElementData;
   slideIndex: number;
+  t: (key: string, opts?: Record<string, unknown>) => string;
 }) {
   const updateSlideContent = useStore((s) => s.updateSlideContent);
   const [localValue, setLocalValue] = useState<string | null>(null);
@@ -135,7 +143,7 @@ function ContentField({
         <span className="inspector-label">{el.role} (table)</span>
         {el.headers && (
           <div className="inspector-table-info">
-            {el.headers.length} columns, {el.rows?.length || 0} rows
+            {t("inspector.table_info", { cols: el.headers.length, rows: el.rows?.length || 0 })}
           </div>
         )}
       </div>
@@ -146,10 +154,9 @@ function ContentField({
     return (
       <div className="inspector-content-block">
         <span className="inspector-label">{el.role} (chart)</span>
-        <div className="inspector-table-info">
-          {el.chartType} chart &mdash; {el.data?.categories.length || 0} data
-          points
-        </div>
+          <div className="inspector-table-info">
+            {t("inspector.chart_info", { type: el.chartType, points: el.data?.categories.length || 0 })}
+          </div>
       </div>
     );
   }
@@ -185,6 +192,7 @@ function StyleTab({
   slide: SlideData;
   slideIndex: number;
 }) {
+  const { t } = useTranslation();
   const updateSlideElementStyle = useStore((s) => s.updateSlideElementStyle);
   const [selectedId, setSelectedId] = useState<string | null>(
     slide.elements[0]?.id ?? null
@@ -214,7 +222,7 @@ function StyleTab({
     <div className="inspector-section">
       {/* Element selector */}
       <div className="inspector-field">
-        <span className="inspector-label">Element</span>
+        <span className="inspector-label">{t("inspector.label_element")}</span>
         <select
           className="inspector-select"
           value={selectedId ?? ""}
@@ -235,11 +243,11 @@ function StyleTab({
       {selectedEl && selectedEl.type === "text" && (
         <>
           <div className="inspector-divider" />
-          <span className="inspector-section-title">Typography</span>
+          <span className="inspector-section-title">{t("inspector.section_typography")}</span>
 
           {/* Font size */}
           <div className="inspector-field">
-            <span className="inspector-label">Font Size</span>
+            <span className="inspector-label">{t("inspector.label_font_size")}</span>
             <input
               type="number"
               className="inspector-input"
@@ -254,7 +262,7 @@ function StyleTab({
 
           {/* Font weight */}
           <div className="inspector-field">
-            <span className="inspector-label">Font Weight</span>
+            <span className="inspector-label">{t("inspector.label_font_weight")}</span>
             <select
               className="inspector-select"
               value={getVal("fontWeight") || ""}
@@ -275,11 +283,11 @@ function StyleTab({
           </div>
 
           <div className="inspector-divider" />
-          <span className="inspector-section-title">Colors</span>
+          <span className="inspector-section-title">{t("inspector.section_colors")}</span>
 
           {/* Text color */}
           <div className="inspector-field">
-            <span className="inspector-label">Text Color</span>
+            <span className="inspector-label">{t("inspector.label_text_color")}</span>
             <div className="inspector-color-input-row">
               <input
                 type="color"
@@ -301,7 +309,7 @@ function StyleTab({
 
           {/* Background color */}
           <div className="inspector-field">
-            <span className="inspector-label">Background Color</span>
+            <span className="inspector-label">{t("inspector.label_bg_color")}</span>
             <div className="inspector-color-input-row">
               <input
                 type="color"
@@ -324,9 +332,7 @@ function StyleTab({
       )}
 
       {selectedEl && selectedEl.type !== "text" && (
-        <div className="inspector-style-hint">
-          Style controls are available for text elements.
-        </div>
+        <div className="inspector-style-hint">{t("inspector.style_hint")}</div>
       )}
     </div>
   );
@@ -343,11 +349,13 @@ function LayoutTab({
   slide: SlideData;
   slideIndex: number;
 }) {
+  const { t } = useTranslation();
+  const LAYOUTS = useLayouts();
   const updateSlideLayout = useStore((s) => s.updateSlideLayout);
 
   return (
     <div className="inspector-section">
-      <span className="inspector-section-title">Slide Layout</span>
+      <span className="inspector-section-title">{t("inspector.section_slide_layout")}</span>
       <div className="inspector-layout-grid">
         {LAYOUTS.map((layout) => (
           <button
@@ -426,12 +434,13 @@ function ThemeTab() {
 /* ------------------------------------------------------------------ */
 
 function NotesTab({ slide }: { slide: SlideData }) {
+  const { t } = useTranslation();
   return (
     <div className="inspector-section">
-      <label className="inspector-label">Speaker Notes</label>
+      <label className="inspector-label">{t("inspector.tab_notes")}</label>
       <textarea
         className="inspector-textarea inspector-textarea-tall"
-        placeholder="Add speaker notes for this slide..."
+        placeholder={t("inspector.notes_placeholder")}
         value={slide.mainMessage || ""}
         readOnly
         rows={8}
@@ -444,20 +453,24 @@ function NotesTab({ slide }: { slide: SlideData }) {
 /*  Tab definitions & main Inspector                                   */
 /* ------------------------------------------------------------------ */
 
-const tabs: { id: TabId; label: string }[] = [
-  { id: "structure", label: "Structure" },
-  { id: "content", label: "Content" },
-  { id: "style", label: "Style" },
-  { id: "layout", label: "Layout" },
-  { id: "theme", label: "Theme" },
-  { id: "quality", label: "Quality" },
-  { id: "notes", label: "Notes" },
-];
+function useTabs() {
+  const { t } = useTranslation();
+  return [
+    { id: "structure" as TabId, label: t("inspector.tab_structure") },
+    { id: "content" as TabId, label: t("inspector.tab_content") },
+    { id: "style" as TabId, label: t("inspector.tab_style") },
+    { id: "layout" as TabId, label: t("inspector.tab_layout") },
+    { id: "theme" as TabId, label: t("inspector.tab_theme") },
+    { id: "quality" as TabId, label: t("inspector.tab_quality") },
+    { id: "notes" as TabId, label: t("inspector.tab_notes") },
+  ];
+}
 
 export function Inspector() {
   const deck = useStore((s) => s.deck);
   const currentSlideIndex = useStore((s) => s.currentSlideIndex);
   const [activeTab, setActiveTab] = useState<TabId>("structure");
+  const tabs = useTabs();
 
   if (!deck) return null;
 

@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
+import { useTranslation } from "react-i18next";
 import { useStore } from "../store";
 
 interface SettingsPanelProps {
@@ -23,15 +24,8 @@ interface ProviderFieldMap {
   placeholderModel?: string;
 }
 
-function CloudProviderFields({
-  fields,
-  local,
-  setLocal,
-}: {
-  fields: ProviderFieldMap;
-  local: Record<string, string>;
-  setLocal: (v: Record<string, string>) => void;
-}) {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function CloudProviderFields({ fields, local, setLocal }: { fields: ProviderFieldMap; local: any; setLocal: any }) {
   return (
     <>
       <div className="settings-field">
@@ -69,8 +63,10 @@ function CloudProviderFields({
 }
 
 export function SettingsPanel({ onClose }: SettingsPanelProps) {
+  const { t } = useTranslation();
   const providerConfig = useStore((s) => s.providerConfig);
   const updateProviderConfig = useStore((s) => s.updateProviderConfig);
+  const setUILanguage = useStore((s) => s.setUILanguage);
 
   const [local, setLocal] = useState({ ...providerConfig });
   const [testStatus, setTestStatus] = useState<"idle" | "testing" | "ok" | "fail">("idle");
@@ -134,7 +130,7 @@ export function SettingsPanel({ onClose }: SettingsPanelProps) {
       const status = await checkProvider(local.provider);
       if (status.available) {
         setTestStatus("ok");
-        setTestMessage("Connected successfully");
+        setTestMessage(t("settings.connected_ok"));
       } else {
         setTestStatus("fail");
         setTestMessage(status.reason || "Provider not available");
@@ -149,7 +145,7 @@ export function SettingsPanel({ onClose }: SettingsPanelProps) {
     <div className="settings-overlay" onClick={handleOverlayClick}>
       <div className="settings-panel">
         <div className="settings-header">
-          <h2 className="settings-title">Settings</h2>
+          <h2 className="settings-title">{t("settings.title")}</h2>
           <button className="settings-close" onClick={handleCancel}>
             &times;
           </button>
@@ -157,7 +153,7 @@ export function SettingsPanel({ onClose }: SettingsPanelProps) {
 
         {/* AI Provider Section */}
         <div className="settings-section">
-          <h3 className="settings-section-title">AI Provider</h3>
+          <h3 className="settings-section-title">{t("settings.provider")}</h3>
           <div className="settings-field">
             <label className="settings-label">Provider</label>
             <select
@@ -170,21 +166,21 @@ export function SettingsPanel({ onClose }: SettingsPanelProps) {
                 })
               }
             >
-              <option value="mock">Mock (Demo)</option>
-              <option value="ollama">Ollama (Local)</option>
-              <option value="openai">OpenAI Compatible</option>
-              <option value="anthropic">Anthropic Claude</option>
-              <option value="gemini">Google Gemini</option>
-              <option value="deepseek">DeepSeek</option>
-              <option value="kimi">Kimi (Moonshot)</option>
-              <option value="qwen">Qwen (通义千问)</option>
-              <option value="glm-domestic">GLM 国内 (智谱)</option>
-              <option value="glm-international">GLM 国际 (智谱)</option>
-              <option value="minimax-domestic">MiniMax 国内</option>
-              <option value="minimax-international">MiniMax 国际</option>
-              <option value="openrouter">OpenRouter</option>
-              <option value="lmstudio">LM Studio (Local)</option>
-              <option value="vllm">vLLM (Local)</option>
+              <option value="mock">{t("settings.provider_mock")}</option>
+              <option value="ollama">{t("settings.provider_ollama")}</option>
+              <option value="openai">{t("settings.provider_openai")}</option>
+              <option value="anthropic">{t("settings.provider_anthropic")}</option>
+              <option value="gemini">{t("settings.provider_gemini")}</option>
+              <option value="deepseek">{t("settings.provider_deepseek")}</option>
+              <option value="kimi">{t("settings.provider_kimi")}</option>
+              <option value="qwen">{t("settings.provider_qwen")}</option>
+              <option value="glm-domestic">{t("settings.provider_glm_domestic")}</option>
+              <option value="glm-international">{t("settings.provider_glm_international")}</option>
+              <option value="minimax-domestic">{t("settings.provider_minimax_domestic")}</option>
+              <option value="minimax-international">{t("settings.provider_minimax_international")}</option>
+              <option value="openrouter">{t("settings.provider_openrouter")}</option>
+              <option value="lmstudio">{t("settings.provider_lmstudio")}</option>
+              <option value="vllm">{t("settings.provider_vllm")}</option>
             </select>
           </div>
 
@@ -236,7 +232,7 @@ export function SettingsPanel({ onClose }: SettingsPanelProps) {
                 )}
               </div>
               <p className="settings-hint">
-                Make sure Ollama is running: <code>ollama serve</code>
+                {t("settings.ollama_hint")} <code>ollama serve</code>
               </p>
             </>
           )}
@@ -321,9 +317,7 @@ export function SettingsPanel({ onClose }: SettingsPanelProps) {
           )}
 
           {local.provider === "mock" && (
-            <p className="settings-hint">
-              Demo mode — generates sample content without a real AI model
-            </p>
+            <p className="settings-hint">{t("settings.demo_mode")}</p>
           )}
 
           {local.provider !== "mock" && (
@@ -334,12 +328,12 @@ export function SettingsPanel({ onClose }: SettingsPanelProps) {
                 disabled={testStatus === "testing"}
               >
                 {testStatus === "testing"
-                  ? "Testing..."
+                  ? t("settings.testing")
                   : testStatus === "ok"
-                    ? "Connected"
+                    ? t("settings.connected")
                     : testStatus === "fail"
-                      ? "Retry"
-                      : "Test Connection"}
+                      ? t("settings.retry")
+                      : t("settings.test_connection")}
               </button>
               {testMessage && (
                 <span
@@ -352,9 +346,9 @@ export function SettingsPanel({ onClose }: SettingsPanelProps) {
           )}
         </div>
 
-        {/* Language Section */}
+        {/* Content Language Section */}
         <div className="settings-section">
-          <h3 className="settings-section-title">Language</h3>
+          <h3 className="settings-section-title">{t("settings.language")} (Content)</h3>
           <div className="settings-radio-group">
             {(["zh", "en", "bilingual"] as const).map((lang) => (
               <label key={lang} className="settings-radio-label">
@@ -370,7 +364,30 @@ export function SettingsPanel({ onClose }: SettingsPanelProps) {
                     })
                   }
                 />
-                {lang === "zh" ? "中文" : lang === "en" ? "English" : "Bilingual"}
+                {lang === "zh" ? t("settings.lang_zh") : lang === "en" ? t("settings.lang_en") : t("settings.lang_bilingual")}
+              </label>
+            ))}
+          </div>
+        </div>
+
+        {/* UI Language Section */}
+        <div className="settings-section">
+          <h3 className="settings-section-title">{t("settings.language")} (UI)</h3>
+          <div className="settings-radio-group">
+            {(["zh", "en"] as const).map((lang) => (
+              <label key={lang} className="settings-radio-label">
+                <input
+                  type="radio"
+                  name="uilanguage"
+                  value={lang}
+                  checked={local.uilanguage === lang}
+                  onChange={(e) => {
+                    const val = e.target.value as "zh" | "en";
+                    setLocal({ ...local, uilanguage: val });
+                    setUILanguage(val);
+                  }}
+                />
+                {lang === "zh" ? t("settings.lang_zh") : t("settings.lang_en")}
               </label>
             ))}
           </div>
@@ -378,7 +395,7 @@ export function SettingsPanel({ onClose }: SettingsPanelProps) {
 
         {/* Theme Section */}
         <div className="settings-section">
-          <h3 className="settings-section-title">Theme</h3>
+          <h3 className="settings-section-title">{t("settings.theme")}</h3>
           <div className="settings-theme-grid">
             {THEMES.map((theme) => (
               <button
@@ -399,10 +416,10 @@ export function SettingsPanel({ onClose }: SettingsPanelProps) {
         {/* Actions */}
         <div className="settings-actions">
           <button className="settings-btn settings-btn-secondary" onClick={handleCancel}>
-            Cancel
+            {t("settings.cancel")}
           </button>
           <button className="settings-btn settings-btn-primary" onClick={handleSave}>
-            Save
+            {t("settings.save")}
           </button>
         </div>
       </div>

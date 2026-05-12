@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import { useStore } from "../store";
 import { WelcomeView } from "./WelcomeView";
 import type { SlideData, ElementData, DeckTheme } from "../types";
@@ -644,21 +645,21 @@ function renderSlideLayout(slide: SlideData, theme: DeckTheme) {
   );
 }
 
-const generationSteps = ["理解需求", "规划结构", "生成内容", "优化质量"];
-
 function GenerationProgress({ step }: { step: string }) {
-  const stepBase = step.replace("...", "");
-  const activeIndex = generationSteps.indexOf(stepBase);
-  const isComplete = step === "完成";
+  const { t } = useTranslation();
+  const genStepKeys = ["understanding", "planning", "generating", "optimizing"];
+  const stepLabels = genStepKeys.map((k) => t(`generation.${k}`));
+  const activeIndex = genStepKeys.indexOf(step);
+  const isComplete = step === "complete";
 
   return (
     <div className="generation-progress">
       <div className="generation-progress-spinner" />
-      <div className="generation-progress-text">{step}</div>
+      <div className="generation-progress-text">{isComplete ? t("generation.complete") : stepLabels[activeIndex]}</div>
       <div className="generation-progress-steps">
-        {generationSteps.map((s, i) => (
+        {stepLabels.map((label, i) => (
           <span
-            key={s}
+            key={genStepKeys[i]}
             className={`progress-step ${
               isComplete || i < activeIndex
                 ? "progress-step-completed"
@@ -667,8 +668,8 @@ function GenerationProgress({ step }: { step: string }) {
                   : ""
             }`}
           >
-            {s}
-            {i < generationSteps.length - 1 && (
+            {label}
+            {i < stepLabels.length - 1 && (
               <span className="progress-step-arrow"> → </span>
             )}
           </span>
@@ -679,6 +680,7 @@ function GenerationProgress({ step }: { step: string }) {
 }
 
 function QualityBadge() {
+  const { t } = useTranslation();
   const deck = useStore((s) => s.deck);
   const [score, setScore] = useState<number | null>(null);
 
@@ -699,13 +701,14 @@ function QualityBadge() {
   if (score === null) return null;
   const color = score >= 80 ? "#00c853" : score >= 60 ? "#ffab00" : "#ff1744";
   return (
-    <span className="quality-badge" style={{ color }} title={`Quality: ${score}/100`}>
+    <span className="quality-badge" style={{ color }} title={t("slide.quality_badge", { score })}>
       ● {score}
     </span>
   );
 }
 
 export function SlidePreview() {
+  const { t } = useTranslation();
   const deck = useStore((s) => s.deck);
   const currentSlideIndex = useStore((s) => s.currentSlideIndex);
   const nextSlide = useStore((s) => s.nextSlide);
@@ -727,7 +730,7 @@ export function SlidePreview() {
   const [showNotes, setShowNotes] = useState(!!slide.speakerNote);
 
   const theme = deck.theme;
-  const showProgress = generationStep !== null && generationStep !== "完成";
+  const showProgress = generationStep !== null && generationStep !== "complete";
 
   return (
     <div className="slide-preview">
@@ -745,6 +748,7 @@ export function SlidePreview() {
           className="slide-nav-btn"
           onClick={prevSlide}
           disabled={currentSlideIndex === 0}
+          title={t("slide.nav_prev")}
         >
           &larr;
         </button>
@@ -756,6 +760,7 @@ export function SlidePreview() {
           className="slide-nav-btn"
           onClick={nextSlide}
           disabled={currentSlideIndex === deck.slides.length - 1}
+          title={t("slide.nav_next")}
         >
           &rarr;
         </button>
@@ -763,10 +768,10 @@ export function SlidePreview() {
           <button
             className="slide-nav-btn speaker-notes-toggle"
             onClick={() => setShowNotes(!showNotes)}
-            title="Toggle Speaker Notes"
+            title={t("slide.notes_toggle")}
             style={{ fontSize: '12px' }}
           >
-            {showNotes ? '📝' : '📝'}
+            📝
           </button>
         )}
       </div>
@@ -774,7 +779,7 @@ export function SlidePreview() {
         <div className="speaker-notes">
           <div className="speaker-notes-header">
             <span className="speaker-notes-icon">📝</span>
-            <span className="speaker-notes-title">Speaker Notes</span>
+            <span className="speaker-notes-title">{t("slide.notes_title")}</span>
           </div>
           <p className="speaker-notes-text">{slide.speakerNote}</p>
         </div>

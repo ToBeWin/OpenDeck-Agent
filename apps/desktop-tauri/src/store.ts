@@ -1,6 +1,5 @@
 import { create } from "zustand";
 import type { DeckData } from "./types";
-import { sampleDeck } from "./data/sample-deck";
 
 interface AppState {
   deck: DeckData | null;
@@ -37,11 +36,34 @@ interface AppState {
     minimaxInternationalApiKey: string;
     minimaxInternationalBaseUrl: string;
     minimaxInternationalModel: string;
+    anthropicApiKey: string;
+    anthropicBaseUrl: string;
+    anthropicModel: string;
+    geminiApiKey: string;
+    geminiBaseUrl: string;
+    geminiModel: string;
+    deepseekApiKey: string;
+    deepseekBaseUrl: string;
+    deepseekModel: string;
+    qwenApiKey: string;
+    qwenBaseUrl: string;
+    qwenModel: string;
+    openrouterApiKey: string;
+    openrouterBaseUrl: string;
+    openrouterModel: string;
+    lmstudioApiKey: string;
+    lmstudioBaseUrl: string;
+    lmstudioModel: string;
+    vllmApiKey: string;
+    vllmBaseUrl: string;
+    vllmModel: string;
     language: "zh" | "en" | "bilingual";
+    uilanguage: "zh" | "en";
     theme: string;
   };
 
   setDeck: (deck: DeckData | null) => void;
+  setUILanguage: (lang: "zh" | "en") => void;
   updateSlideContent: (slideIndex: number, elementId: string, content: string) => void;
   updateSlideElementStyle: (slideIndex: number, elementId: string, style: Record<string, unknown>) => void;
   updateSlideLayout: (slideIndex: number, layout: string) => void;
@@ -122,7 +144,13 @@ export const useStore = create<AppState>((set, get) => ({
     vllmBaseUrl: "http://localhost:8000/v1",
     vllmModel: "meta-llama/Meta-Llama-3-8B-Instruct",
     language: "zh",
+    uilanguage: "zh",
     theme: "Bloomberg Dark",
+  },
+
+  setUILanguage: (lang) => {
+    import("i18next").then((i18n) => i18n.default.changeLanguage(lang));
+    set((s) => ({ providerConfig: { ...s.providerConfig, uilanguage: lang } }));
   },
 
   setDeck: (deck) => set({ deck, currentSlideIndex: 0, error: null, history: [], future: [], dirty: false }),
@@ -305,14 +333,14 @@ export const useStore = create<AppState>((set, get) => ({
         break;
     }
 
-    set({ loading: true, error: null, generationStep: "理解需求..." });
+    set({ loading: true, error: null, generationStep: "understanding" });
     try {
-      set({ generationStep: "规划结构..." });
+      set({ generationStep: "planning" });
       const { generateDeck } = await import("./lib/tauri");
       const result = await generateDeck(prompt, providerConfig);
       const deck = (result as { deck: DeckData }).deck;
       if (!deck) throw new Error("Generation returned empty result");
-      set({ deck, currentSlideIndex: 0, generationStep: "完成" });
+      set({ deck, currentSlideIndex: 0, generationStep: "complete" });
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
       set({ error: msg, generationStep: null });
@@ -390,7 +418,7 @@ export const useStore = create<AppState>((set, get) => ({
   },
 
   saveProject: async () => {
-    const { deck, projectPath } = get();
+    const { deck } = get();
     if (!deck) return;
     set({ loading: true, error: null });
     try {

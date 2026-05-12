@@ -1,4 +1,5 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import { useStore } from "../store";
 
 function getScoreColor(score: number): string {
@@ -80,6 +81,7 @@ interface DeckQualityScore {
 }
 
 export function QualityTab() {
+  const { t } = useTranslation();
   const deck = useStore((s) => s.deck);
   const currentSlideIndex = useStore((s) => s.currentSlideIndex);
   const [score, setScore] = useState<DeckQualityScore | null>(null);
@@ -103,8 +105,8 @@ export function QualityTab() {
   }, [deck]);
 
   if (!deck || !score) {
-    if (loading) return <div className="inspector-section"><span className="inspector-label">Scoring...</span></div>;
-    return <div className="inspector-section"><span className="inspector-label">Load a deck to see quality score</span></div>;
+    if (loading) return <div className="inspector-section"><span className="inspector-label">{t("quality.loading")}</span></div>;
+    return <div className="inspector-section"><span className="inspector-label">{t("quality.empty")}</span></div>;
   }
 
   const currentSlide = deck.slides[currentSlideIndex];
@@ -119,7 +121,7 @@ export function QualityTab() {
   return (
     <div className="inspector-section">
       {/* Overall score */}
-      <span className="inspector-section-title">Overall Quality</span>
+      <span className="inspector-section-title">{t("quality.overall_title")}</span>
       <div className="quality-score-rings">
         <ScoreRing score={score.overall} label="Overall" />
         <ScoreRing score={score.content} label="Content" />
@@ -127,14 +129,14 @@ export function QualityTab() {
       </div>
 
       <div className="inspector-divider" />
-      <span className="inspector-section-title">Category Scores</span>
+      <span className="inspector-section-title">{t("quality.overall")} Scores</span>
       <div className="quality-bars">
-        <ScoreBar score={score.content} label="Content" />
-        <ScoreBar score={score.logic} label="Logic" />
-        <ScoreBar score={score.visual} label="Visual" />
-        <ScoreBar score={score.editability} label="Editability" />
-        <ScoreBar score={score.consistency} label="Consistency" />
-        <ScoreBar score={score.compatibility} label="Compatibility" />
+        <ScoreBar score={score.content} label={t("quality.content")} />
+        <ScoreBar score={score.logic} label={t("quality.logic")} />
+        <ScoreBar score={score.visual} label={t("quality.visual")} />
+        <ScoreBar score={score.editability} label={t("quality.editability")} />
+        <ScoreBar score={score.consistency} label={t("quality.consistency")} />
+        <ScoreBar score={score.compatibility} label={t("quality.compatibility")} />
       </div>
 
       {/* Current slide score */}
@@ -142,7 +144,7 @@ export function QualityTab() {
         <>
           <div className="inspector-divider" />
           <span className="inspector-section-title">
-            Current Slide Score: {slideScore.overall}
+            {t("quality.current_slide", { score: slideScore.overall })}
           </span>
           {slideScore.issues.length > 0 ? (
             <div className="quality-issues-list">
@@ -157,7 +159,7 @@ export function QualityTab() {
             </div>
           ) : (
             <span className="inspector-value" style={{ color: "#00c853" }}>
-              No issues found
+              {t("quality.no_issues")}
             </span>
           )}
         </>
@@ -167,7 +169,7 @@ export function QualityTab() {
       {score.issues.length > 0 && (
         <>
           <div className="inspector-divider" />
-          <span className="inspector-section-title">Deck Issues</span>
+          <span className="inspector-section-title">{t("quality.deck_issues")}</span>
           <div className="quality-issues-list">
             {score.issues.slice(0, 10).map((issue, i) => (
               <div key={i} className="quality-issue-row">
