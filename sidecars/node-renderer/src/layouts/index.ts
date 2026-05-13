@@ -20,6 +20,7 @@ import { renderImageText } from "./image-text";
 import { renderFullBleedImage } from "./full-bleed-image";
 import { renderConsultingSummary } from "./consulting-summary";
 import { renderAppendix } from "./appendix";
+import { renderSlideImage } from "./image-helper";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -122,6 +123,15 @@ function renderFallback(
   const pptxSlide = pres.addSlide();
   pptxSlide.background = { fill: theme.colors.background };
 
+  let imageCount = 0;
+  let editableTextCount = 0;
+
+  // Render image if present
+  const imageEl = slide.elements.find((el) => el.type === "image");
+  if (imageEl?.source) {
+    imageCount = renderSlideImage(pres, pptxSlide, slide, 0.8, 1.0, 5.0, 5.0, theme);
+  }
+
   const title = slide.elements.find(
     (el) => el.type === "text" && (el.role === "title" || el.role === "headline")
   );
@@ -129,11 +139,14 @@ function renderFallback(
     (el) => el.type === "text" && el.role === "body"
   );
 
+  const textX = imageEl?.source ? 6.2 : 0.8;
+  const textW = imageEl?.source ? 6.3 : 11.7;
+
   if (title) {
     pptxSlide.addText(title.content || "", {
-      x: 0.8,
+      x: textX,
       y: 1.5,
-      w: 11.7,
+      w: textW,
       h: 1.5,
       fontSize: theme.typography.titleSize - 8,
       bold: true,
@@ -141,13 +154,14 @@ function renderFallback(
       align: "left",
       fontFace: theme.typography.titleFont,
     });
+    editableTextCount++;
   }
 
   if (body) {
     pptxSlide.addText(body.content || "", {
-      x: 0.8,
+      x: textX,
       y: 3.2,
-      w: 11.7,
+      w: textW,
       h: 3.0,
       fontSize: theme.typography.bodySize,
       color: theme.colors.textSecondary,
@@ -155,14 +169,10 @@ function renderFallback(
       fontFace: theme.typography.bodyFont,
       valign: "top",
     });
+    editableTextCount++;
   }
 
-  return {
-    editableTextCount: (title ? 1 : 0) + (body ? 1 : 0),
-    imageCount: 0,
-    chartCount: 0,
-    tableCount: 0,
-  };
+  return { editableTextCount, imageCount, chartCount: 0, tableCount: 0 };
 }
 
 // ---------------------------------------------------------------------------

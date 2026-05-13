@@ -2,6 +2,7 @@ import PptxGenJS from "pptxgenjs";
 import { SlideData } from "../renderer";
 import { type ThemeTokens } from "../theme";
 import { SlideRenderStats } from "./index";
+import { renderHeroImage, renderSlideImage } from "./image-helper";
 
 export function renderCover(
   pres: PptxGenJS,
@@ -11,8 +12,20 @@ export function renderCover(
 ): SlideRenderStats {
   const pptxSlide = pres.addSlide();
   let editableTextCount = 0;
+  let imageCount = 0;
 
   pptxSlide.background = { fill: theme.colors.background };
+
+  // Hero image as full background if present
+  if (renderHeroImage(pres, pptxSlide, slide, theme)) {
+    imageCount++;
+    // Dark overlay for readability
+    pptxSlide.addShape(pres.ShapeType.rect, {
+      x: 0, y: 0, w: 13.33, h: 7.5,
+      fill: { type: "solid", color: "000000" },
+      line: { width: 0 },
+    });
+  }
 
   const titleEl = slide.elements.find(
     (el) => el.type === "text" && (el.role === "title" || el.role === "headline")
@@ -86,5 +99,5 @@ export function renderCover(
     pptxSlide.addNotes(slide.speakerNote);
   }
 
-  return { editableTextCount, imageCount: 0, chartCount: 0, tableCount: 0 };
+  return { editableTextCount, imageCount, chartCount: 0, tableCount: 0 };
 }
