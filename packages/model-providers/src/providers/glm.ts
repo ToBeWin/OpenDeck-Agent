@@ -3,6 +3,7 @@ import type {
   TextCompletionRequest,
   TextCompletionResult,
 } from "../types";
+import { fetchWithTimeout } from "../fetch-with-timeout";
 import { buildOpenAIMessages } from "./vision-utils";
 
 export type GLMRegion = "domestic" | "international";

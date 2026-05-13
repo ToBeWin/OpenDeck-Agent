@@ -161,14 +161,10 @@ export async function generateDeck(
   }
 
   // Attach warnings to deck metadata if not already set
-  if (!deck.metadata || !(deck.metadata as Record<string, unknown>).warnings) {
-    deck = {
-      ...deck,
-      metadata: {
-        ...(deck.metadata as Record<string, unknown>),
-        warnings,
-      } as typeof deck.metadata,
-    };
+  const metaWarnings = (deck.metadata as unknown as { warnings?: PipelineWarning[] })?.warnings;
+  if (!metaWarnings) {
+    const newMeta = { ...(deck.metadata as unknown as Record<string, unknown>), warnings };
+    deck = { ...deck, metadata: newMeta as unknown as typeof deck.metadata };
   }
 
   return deck;

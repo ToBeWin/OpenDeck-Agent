@@ -4,6 +4,7 @@ import type {
   TextCompletionResult,
 } from "../types";
 import { buildOpenAIMessages } from "./vision-utils";
+import { fetchWithTimeout } from "../fetch-with-timeout";
 
 export interface KimiProviderOptions {
   apiKey?: string;

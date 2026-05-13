@@ -3,6 +3,7 @@ import type {
   TextCompletionRequest,
   TextCompletionResult,
 } from "../types";
+import { fetchWithTimeout } from "../fetch-with-timeout";
 
 export interface DeepSeekProviderOptions {
   apiKey?: string;
