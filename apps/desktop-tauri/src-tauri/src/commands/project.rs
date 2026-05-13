@@ -79,6 +79,13 @@ pub async fn list_projects(app: tauri::AppHandle) -> Result<Vec<ProjectInfo>, St
 }
 
 #[tauri::command]
+pub async fn read_file(app: tauri::AppHandle, path: String) -> Result<String, String> {
+    let content = std::fs::read_to_string(&path)
+        .map_err(|e| format!("Failed to read file: {}", e))?;
+    Ok(content)
+}
+
+#[tauri::command]
 pub async fn delete_project(app: tauri::AppHandle, path: String) -> Result<(), String> {
     fs::remove_file(&path).map_err(|e| format!("Failed to delete project: {}", e))?;
     Ok(())

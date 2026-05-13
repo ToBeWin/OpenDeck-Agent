@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
+import { useStore } from "../store";
 
 interface WelcomeViewProps {
   onGenerate: (prompt: string) => void;
@@ -18,6 +19,8 @@ const exampleKeys = [
 
 export function WelcomeView({ onGenerate }: WelcomeViewProps) {
   const { t } = useTranslation();
+  const importDocumentAndGenerate = useStore((s) => s.importDocumentAndGenerate);
+  const loading = useStore((s) => s.loading);
   const [prompt, setPrompt] = useState("");
 
   function handleSubmit(e: React.FormEvent) {
@@ -50,8 +53,16 @@ export function WelcomeView({ onGenerate }: WelcomeViewProps) {
           onChange={(e) => setPrompt(e.target.value)}
           rows={3}
         />
-        <button className="welcome-submit" type="submit">
-          {t("welcome.generate")}
+        <button className="welcome-submit" type="submit" disabled={loading}>
+          {loading ? t("welcome.generating") : t("welcome.generate")}
+        </button>
+        <button
+          className="welcome-upload-btn"
+          type="button"
+          onClick={importDocumentAndGenerate}
+          disabled={loading}
+        >
+          {loading ? t("welcome.generating") : "📄 Upload Document"}
         </button>
       </form>
       <div className="welcome-examples">

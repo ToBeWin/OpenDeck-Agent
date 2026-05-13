@@ -1549,6 +1549,28 @@ body {
   transform: translateY(0);
 }
 
+.welcome-upload-btn {
+  align-self: flex-end;
+  padding: 10px 20px;
+  background: transparent;
+  border: 1px solid #4a6cf7;
+  border-radius: 8px;
+  color: #4a6cf7;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: opacity 0.15s;
+}
+
+.welcome-upload-btn:hover {
+  opacity: 0.8;
+}
+
+.welcome-upload-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
 .welcome-examples {
   display: grid;
   grid-template-columns: 1fr 1fr;

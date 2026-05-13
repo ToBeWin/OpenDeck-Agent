@@ -85,6 +85,7 @@ interface AppState {
   saveProject: () => Promise<void>;
   loadProject: () => Promise<void>;
   newProject: () => void;
+  importDocumentAndGenerate: () => Promise<void>;
   generateImageForSlide: (slideIndex: number, prompt: string) => Promise<void>;
 }
 
@@ -468,6 +469,56 @@ export const useStore = create<AppState>((set, get) => ({
       future: [],
       error: null,
     });
+  },
+
+  importDocumentAndGenerate: async () => {
+    set({ loading: true, error: null, generationStep: "understanding" });
+    try {
+      const { open } = await import("@tauri-apps/plugin-dialog");
+      const selected = await open({
+        multiple: false,
+        filters: [
+          { name: "Documents", extensions: ["txt", "md", "docx", "pdf"] },
+        ],
+      });
+      if (!selected) { set({ loading: false, generationStep: null }); return; }
+      const path = Array.isArray(selected) ? selected[0] : selected;
+
+      set({ generationStep: "understanding" });
+      const { readTextFile } = await import("./lib/tauri");
+      const content = await readTextFile(path as string);
+      if (!content.trim()) throw new Error("File is empty");
+
+      // Use document content as prompt
+      const prompt = `Based on the following document, create a presentation:\n\n${content.slice(0, 8000)}`;
+      set({ generationStep: "planning" });
+
+      const { generateDeck } = await import("./lib/tauri");
+      const { providerConfig } = get();
+      const themeMap: Record<string, string> = {
+        "Bloomberg Dark": "bloomberg_dark",
+        "Apple Keynote": "apple_keynote",
+        "McKinsey Consulting": "mckinsey_consulting",
+        "Dark Elegance": "dark_elegance",
+        "Minimal Light": "minimal_light",
+        "Tech Gradient": "tech_gradient",
+      };
+      const providerSettings: Record<string, string | undefined> = {
+        provider: providerConfig.provider,
+        language: providerConfig.language,
+        theme: themeMap[providerConfig.theme] ?? "bloomberg_dark",
+      };
+
+      const result = await generateDeck(prompt, providerSettings);
+      const deck = (result as { deck: DeckData }).deck;
+      if (!deck) throw new Error("Generation returned empty result");
+      set({ deck, currentSlideIndex: 0, generationStep: "complete", dirty: false, history: [], future: [] });
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      set({ error: msg, generationStep: null });
+    } finally {
+      set({ loading: false });
+    }
   },
 
   generateImageForSlide: async (slideIndex, prompt) => {

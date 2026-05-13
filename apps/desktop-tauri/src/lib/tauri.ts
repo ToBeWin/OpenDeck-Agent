@@ -97,6 +97,10 @@ export async function deleteProject(path: string): Promise<void> {
   return invoke("delete_project", { path });
 }
 
+export async function readTextFile(path: string): Promise<string> {
+  return invoke("read_file", { path });
+}
+
 // ── Image Generation ──
 
 export interface ImageGenResult {
