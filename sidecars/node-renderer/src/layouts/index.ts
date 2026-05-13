@@ -20,7 +20,7 @@ import { renderImageText } from "./image-text";
 import { renderFullBleedImage } from "./full-bleed-image";
 import { renderConsultingSummary } from "./consulting-summary";
 import { renderAppendix } from "./appendix";
-import { renderSlideImage } from "./image-helper";
+import { renderSlideImage, getElementPos } from "./image-helper";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -143,11 +143,9 @@ function renderFallback(
   const textW = imageEl?.source ? 6.3 : 11.7;
 
   if (title) {
+    const tp = getElementPos(title, textX, 1.5, textW, 1.5);
     pptxSlide.addText(title.content || "", {
-      x: textX,
-      y: 1.5,
-      w: textW,
-      h: 1.5,
+      x: tp.x, y: tp.y, w: tp.w, h: tp.h,
       fontSize: theme.typography.titleSize - 8,
       bold: true,
       color: theme.colors.textPrimary,
@@ -158,11 +156,9 @@ function renderFallback(
   }
 
   if (body) {
+    const bp = getElementPos(body, textX, 3.2, textW, 3.0);
     pptxSlide.addText(body.content || "", {
-      x: textX,
-      y: 3.2,
-      w: textW,
-      h: 3.0,
+      x: bp.x, y: bp.y, w: bp.w, h: bp.h,
       fontSize: theme.typography.bodySize,
       color: theme.colors.textSecondary,
       align: "left",
