@@ -3,6 +3,7 @@ import type {
   TextCompletionRequest,
   TextCompletionResult,
 } from "../types";
+import { fetchWithTimeout } from "../fetch-with-timeout";
 
 export interface LMStudioProviderOptions {
   baseUrl?: string;
@@ -39,10 +40,13 @@ export function createLMStudioProvider(
 
       let response: Response;
       try {
-        response = await fetch(`${baseUrl}/chat/completions`, {
-          method: "POST",
+        response = await fetchWithTimeout({
+          url: `${baseUrl}/chat/completions`,
+          options: { method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(body),
+        },
+          signal: req.signal,
         });
       } catch (err) {
         throw new Error(

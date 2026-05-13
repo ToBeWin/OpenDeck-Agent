@@ -352,19 +352,20 @@ export const useStore = create<AppState>((set, get) => ({
 
   modifyFromCommand: async (command: string) => {
     const { deck, addCommand } = get();
+    if (!deck) { set({ error: "No deck to modify" }); return; }
     set({ loading: true, error: null });
     try {
       const { invoke } = await import("@tauri-apps/api/core");
-      const deckJson = deck ? JSON.stringify(deck) : "";
+      const deckJson = JSON.stringify(deck);
       const result = await invoke<DeckData>("modify_deck", {
         deckJson,
         command,
       });
-      set({ deck: result });
+      set({ deck: result, dirty: true });
       addCommand(command);
-    } catch {
-      // Fallback: just add to command history
-      addCommand(command);
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      set({ error: `Modify failed: ${msg}` });
     } finally {
       set({ loading: false });
     }

@@ -4,6 +4,7 @@ import type {
   TextCompletionResult,
 } from "../types";
 import { buildGeminiContents } from "./vision-utils";
+import { fetchWithTimeout } from "../fetch-with-timeout";
 
 export interface GeminiProviderOptions {
   apiKey?: string;
@@ -49,10 +50,14 @@ export function createGeminiProvider(
       let response: Response;
       try {
         const url = `${baseUrl}/models/${model}:generateContent?key=${apiKey}`;
-        response = await fetch(url, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(body),
+        response = await fetchWithTimeout({
+          url,
+          options: {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(body),
+          },
+          signal: req.signal,
         });
       } catch (err) {
         throw new Error(

@@ -3,6 +3,7 @@ import type {
   TextCompletionRequest,
   TextCompletionResult,
 } from "../types";
+import { fetchWithTimeout } from "../fetch-with-timeout";
 
 export interface OllamaProviderOptions {
   baseUrl?: string;
@@ -116,10 +117,14 @@ export function createOllamaProvider(
 
       let response: Response;
       try {
-        response = await fetch(`${baseUrl}/api/chat`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(body),
+        response = await fetchWithTimeout({
+          url: `${baseUrl}/api/chat`,
+          options: {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(body),
+          },
+          signal: req.signal,
         });
       } catch (err) {
         throw new Error(

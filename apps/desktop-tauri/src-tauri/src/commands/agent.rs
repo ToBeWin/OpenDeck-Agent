@@ -1,7 +1,8 @@
 use serde::{Deserialize, Serialize};
-use std::io::Write;
-use std::process::{Command, Stdio};
+use std::process::Child;
 use tauri::Manager;
+
+use super::jsonrpc::{self, JsonRpcRequest};
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct GenerateOptions {
@@ -27,73 +28,9 @@ pub struct ProviderList {
     pub providers: Vec<String>,
 }
 
-#[derive(Serialize)]
-struct JsonRpcRequest {
-    id: String,
-    method: String,
-    params: serde_json::Value,
-}
-
-#[derive(Deserialize)]
-struct JsonRpcResponse {
-    id: String,
-    result: Option<serde_json::Value>,
-    error: Option<JsonRpcError>,
-}
-
-#[derive(Deserialize)]
-struct JsonRpcError {
-    code: i32,
-    message: String,
-}
-
-fn call_sidecar(
-    sidecar_path: &std::path::Path,
-    request: &JsonRpcRequest,
-) -> Result<serde_json::Value, String> {
-    let request_str =
-        serde_json::to_string(request).map_err(|e| format!("Failed to serialize: {}", e))?;
-
-    let mut child = Command::new("node")
-        .arg(sidecar_path)
-        .stdin(Stdio::piped())
-        .stdout(Stdio::piped())
-        .stderr(Stdio::piped())
-        .spawn()
-        .map_err(|e| format!("Failed to start sidecar at {}: {}", sidecar_path.display(), e))?;
-
-    if let Some(ref mut stdin) = child.stdin {
-        stdin.write_all(request_str.as_bytes())
-            .map_err(|e| format!("Failed to write to stdin: {}", e))?;
-        stdin.write_all(b"\n")
-            .map_err(|e| format!("Failed to write newline: {}", e))?;
-    }
-    drop(child.stdin.take());
-
-    let output = child.wait_with_output()
-        .map_err(|e| format!("Failed to wait for sidecar: {}", e))?;
-
-    if !output.status.success() {
-        let stderr = String::from_utf8_lossy(&output.stderr);
-        return Err(format!("Sidecar exited with error: {}", stderr));
-    }
-
-    let stdout = String::from_utf8_lossy(&output.stdout);
-    let response: JsonRpcResponse = serde_json::from_str(stdout.trim())
-        .map_err(|e| format!("Invalid sidecar response: {} (raw: {})", e, stdout))?;
-
-    if let Some(error) = response.error {
-        return Err(format!("Sidecar error {}: {}", error.code, error.message));
-    }
-
-    response.result.ok_or_else(|| "No result in sidecar response".to_string())
-}
-
-fn new_request_id() -> String {
-    format!("req_{}", std::time::SystemTime::now()
-        .duration_since(std::time::UNIX_EPOCH)
-        .unwrap_or_default()
-        .as_millis())
+pub struct AgentSidecarState {
+    pub process: Option<Child>,
+    pub sidecar_path: std::path::PathBuf,
 }
 
 fn call_agent_sidecar(
@@ -101,24 +38,29 @@ fn call_agent_sidecar(
     method: &str,
     params: serde_json::Value,
 ) -> Result<serde_json::Value, String> {
-    let resource_dir = app
-        .path()
-        .resource_dir()
-        .map_err(|e| format!("Failed to get resource dir: {}", e))?;
+    let state_lock = app.state::<std::sync::Mutex<AgentSidecarState>>();
+    let mut guard = state_lock.lock().map_err(|e| format!("Lock error: {}", e))?;
 
-    let sidecar_js = resource_dir
-        .join("sidecars")
-        .join("agent-sidecar")
-        .join("dist")
-        .join("index.js");
+    // Start sidecar if not running
+    if guard.process.is_none() {
+        let child = jsonrpc::spawn_sidecar(&guard.sidecar_path)?;
+        guard.process = Some(child);
+    }
 
-    let request = JsonRpcRequest {
-        id: new_request_id(),
-        method: method.to_string(),
-        params,
-    };
-
-    call_sidecar(&sidecar_js, &request)
+    // Take the process
+    if let Some(child) = guard.process.take() {
+        let request = JsonRpcRequest::new(method, params);
+        match jsonrpc::send_request(child, &request) {
+            Ok((result, maybe_child)) => {
+                // Keep process alive for future requests
+                guard.process = maybe_child;
+                Ok(result)
+            }
+            Err(e) => Err(e),
+        }
+    } else {
+        Err("Sidecar not started".to_string())
+    }
 }
 
 #[tauri::command]
@@ -208,16 +150,13 @@ fn render_export(
         .join("dist")
         .join("index.js");
 
-    let request = JsonRpcRequest {
-        id: new_request_id(),
-        method: method.to_string(),
-        params: serde_json::json!({
-            "deckPath": deck_path.to_string_lossy(),
-            "outputPath": output_path.to_string_lossy(),
-        }),
-    };
+    let request = jsonrpc::JsonRpcRequest::new(method, serde_json::json!({
+        "deckPath": deck_path.to_string_lossy(),
+        "outputPath": output_path.to_string_lossy(),
+    }));
 
-    let mut result = call_sidecar(&sidecar_js, &request)?;
+    let child = jsonrpc::spawn_sidecar(&sidecar_js)?;
+    let (mut result, _) = jsonrpc::send_request(child, &request)?;
     result["outputPath"] = serde_json::json!(output_path.to_string_lossy());
     Ok(result)
 }

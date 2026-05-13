@@ -4,6 +4,7 @@ import type {
   TextCompletionResult,
 } from "../types";
 import { buildAnthropicMessages } from "./vision-utils";
+import { fetchWithTimeout } from "../fetch-with-timeout";
 
 export interface AnthropicProviderOptions {
   apiKey?: string;
@@ -54,10 +55,10 @@ export function createAnthropicProvider(
 
       let response: Response;
       try {
-        response = await fetch(`${baseUrl}/messages`, {
-          method: "POST",
-          headers,
-          body: JSON.stringify(body),
+        response = await fetchWithTimeout({
+          url: `${baseUrl}/messages`,
+          options: { method: "POST", headers, body: JSON.stringify(body) },
+          signal: req.signal,
         });
       } catch (err) {
         throw new Error(

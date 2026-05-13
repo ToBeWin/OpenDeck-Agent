@@ -11,6 +11,7 @@ export interface TextCompletionRequest {
   maxTokens?: number;
   temperature?: number;
   images?: ImageInput[];
+  signal?: AbortSignal;
 }
 
 export interface TextCompletionResult {

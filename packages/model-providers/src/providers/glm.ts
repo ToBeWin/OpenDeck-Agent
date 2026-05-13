@@ -67,10 +67,13 @@ export function createGLMProvider(
 
       let response: Response;
       try {
-        response = await fetch(`${baseUrl}/chat/completions`, {
-          method: "POST",
+        response = await fetchWithTimeout({
+          url: `${baseUrl}/chat/completions`,
+          options: { method: "POST",
           headers,
           body: JSON.stringify(body),
+        },
+          signal: req.signal,
         });
       } catch (err) {
         throw new Error(

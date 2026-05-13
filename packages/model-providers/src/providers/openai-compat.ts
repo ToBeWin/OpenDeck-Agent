@@ -4,6 +4,7 @@ import type {
   TextCompletionResult,
 } from "../types";
 import { buildOpenAIMessages } from "./vision-utils";
+import { fetchWithTimeout } from "../fetch-with-timeout";
 
 export interface OpenAICompatProviderOptions {
   baseUrl?: string;
@@ -50,10 +51,10 @@ export function createOpenAICompatProvider(
 
       let response: Response;
       try {
-        response = await fetch(`${baseUrl}/v1/chat/completions`, {
-          method: "POST",
-          headers,
-          body: JSON.stringify(body),
+        response = await fetchWithTimeout({
+          url: `${baseUrl}/chat/completions`,
+          options: { method: "POST", headers, body: JSON.stringify(body) },
+          signal: req.signal,
         });
       } catch (err) {
         throw new Error(
