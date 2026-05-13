@@ -350,6 +350,16 @@ export async function handleGenerate(
 
   const provider = resolveProvider(params);
 
+  // Progress callback writes JSON lines to stderr for the Rust host to forward
+  const onProgress = (step: string, detail?: string) => {
+    try {
+      const msg = JSON.stringify({ type: "progress", step, detail }) + "\n";
+      process.stderr.write(msg);
+    } catch {
+      // Stderr write failures are non-fatal
+    }
+  };
+
   const deck = await generateDeck({
     prompt,
     provider,
@@ -360,6 +370,7 @@ export async function handleGenerate(
     theme: params.theme as string | undefined,
     qualityLoop: params.qualityLoop as boolean | undefined,
     minQualityScore: params.minQualityScore as number | undefined,
+    onProgress,
   });
 
   return { deck };

@@ -3,7 +3,7 @@ mod commands;
 use commands::agent::AgentSidecarState;
 use std::path::PathBuf;
 use std::sync::Mutex;
-use tauri::Manager;
+use tauri::{Emitter, Manager};
 
 fn resolve_sidecar_path(app: &tauri::AppHandle) -> PathBuf {
     let resource_dir = app

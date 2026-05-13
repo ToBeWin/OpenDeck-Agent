@@ -1,5 +1,3 @@
-import type { Deck, Slide } from "@opendeck/slide-dsl";
-
 export interface QualityIssue {
   severity: "error" | "warning" | "info";
   category: "content" | "visual" | "editability" | "consistency" | "compatibility" | "overflow";

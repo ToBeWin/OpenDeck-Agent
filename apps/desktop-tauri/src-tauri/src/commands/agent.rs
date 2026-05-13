@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 use std::process::Child;
-use tauri::Manager;
+use tauri::{Emitter, Manager};
 
 use super::jsonrpc::{self, JsonRpcRequest};
 
@@ -41,22 +41,58 @@ fn call_agent_sidecar(
     let state_lock = app.state::<std::sync::Mutex<AgentSidecarState>>();
     let mut guard = state_lock.lock().map_err(|e| format!("Lock error: {}", e))?;
 
-    // Start sidecar if not running
     if guard.process.is_none() {
         let child = jsonrpc::spawn_sidecar(&guard.sidecar_path)?;
         guard.process = Some(child);
     }
 
-    // Take the process
     if let Some(child) = guard.process.take() {
         let request = JsonRpcRequest::new(method, params);
         match jsonrpc::send_request(child, &request) {
             Ok((result, maybe_child)) => {
-                // Keep process alive for future requests
                 guard.process = maybe_child;
                 Ok(result)
             }
             Err(e) => Err(e),
+        }
+    } else {
+        Err("Sidecar not started".to_string())
+    }
+}
+
+fn generate_with_progress(
+    app: &tauri::AppHandle,
+    params: serde_json::Value,
+) -> Result<serde_json::Value, String> {
+    let state_lock = app.state::<std::sync::Mutex<AgentSidecarState>>();
+    let mut guard = state_lock.lock().map_err(|e| format!("Lock error: {}", e))?;
+
+    if guard.process.is_none() {
+        let child = jsonrpc::spawn_sidecar(&guard.sidecar_path)?;
+        guard.process = Some(child);
+    }
+
+    if let Some(child) = guard.process.take() {
+        let request = JsonRpcRequest::new("agent.generate", params);
+        let app_clone = app.clone();
+
+        let result = jsonrpc::send_request_keepalive(child, &request, move |step, detail| {
+            let _ = app_clone.emit("generation-progress", serde_json::json!({
+                "step": step,
+                "detail": detail,
+            }));
+        });
+
+        match result {
+            Ok((res, child)) => {
+                guard.process = Some(child);
+                Ok(res)
+            }
+            Err(e) => {
+                // Process may be dead; don't try to reuse it
+                guard.process = None;
+                Err(e)
+            }
         }
     } else {
         Err("Sidecar not started".to_string())
@@ -101,7 +137,7 @@ pub fn generate_deck(
         }
     }
 
-    call_agent_sidecar(&app, "agent.generate", params)
+    generate_with_progress(&app, params)
 }
 
 #[tauri::command]

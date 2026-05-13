@@ -7,6 +7,7 @@ interface AppState {
   loading: boolean;
   error: string | null;
   generationStep: string | null;
+  generationDetail: string | null;
   commandBarOpen: boolean;
   commandHistory: string[];
   settingsOpen: boolean;
@@ -64,6 +65,7 @@ interface AppState {
 
   setDeck: (deck: DeckData | null) => void;
   setUILanguage: (lang: "zh" | "en") => void;
+  setGenerationProgress: (step: string | null, detail?: string | null) => void;
   updateSlideContent: (slideIndex: number, elementId: string, content: string) => void;
   updateSlideElementStyle: (slideIndex: number, elementId: string, style: Record<string, unknown>) => void;
   updateSlideLayout: (slideIndex: number, layout: string) => void;
@@ -95,6 +97,7 @@ export const useStore = create<AppState>((set, get) => ({
   loading: false,
   error: null,
   generationStep: null,
+  generationDetail: null,
   commandBarOpen: false,
   commandHistory: [],
   settingsOpen: false,
@@ -154,6 +157,8 @@ export const useStore = create<AppState>((set, get) => ({
     import("i18next").then((i18n) => i18n.default.changeLanguage(lang));
     set((s) => ({ providerConfig: { ...s.providerConfig, uilanguage: lang } }));
   },
+
+  setGenerationProgress: (step, detail) => set({ generationStep: step, generationDetail: detail ?? null }),
 
   setDeck: (deck) => set({ deck, currentSlideIndex: 0, error: null, history: [], future: [], dirty: false }),
 

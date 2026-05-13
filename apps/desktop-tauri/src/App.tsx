@@ -8,6 +8,7 @@ import { StatusBar } from "./components/StatusBar";
 import { SettingsPanel } from "./components/SettingsPanel";
 import { PresentationMode } from "./components/PresentationMode";
 import { ErrorBoundary } from "./components/ErrorBoundary";
+import { listen } from "@tauri-apps/api/event";
 import { ToastProvider, useShowToast } from "./components/Toast";
 import { useStore } from "./store";
 import "./App.css";
@@ -19,6 +20,17 @@ function ErrorWatcher() {
   useEffect(() => {
     if (error) showToast(error, "error");
   }, [error, showToast]);
+  return null;
+}
+
+function ProgressWatcher() {
+  const setGenerationProgress = useStore((s) => s.setGenerationProgress);
+  useEffect(() => {
+    const unlisten = listen<{ step: string; detail?: string }>("generation-progress", (event) => {
+      setGenerationProgress(event.payload.step, event.payload.detail);
+    });
+    return () => { unlisten.then((fn) => fn()); };
+  }, [setGenerationProgress]);
   return null;
 }
 
@@ -140,6 +152,7 @@ function App() {
 
   return (
     <ToastProvider>
+      <ProgressWatcher />
       <ErrorWatcher />
       <div className="app">
         <TopBar onPresent={() => setPresenting(true)} />

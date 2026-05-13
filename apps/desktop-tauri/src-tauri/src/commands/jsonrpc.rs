@@ -1,5 +1,5 @@
 use serde::{Deserialize, Serialize};
-use std::io::Write;
+use std::io::{BufRead, BufReader, Write};
 use std::process::{Child, Command, Stdio};
 
 #[derive(Serialize)]
@@ -78,4 +78,66 @@ pub fn send_request(mut child: Child, request: &JsonRpcRequest) -> Result<(serde
     response.result
         .ok_or_else(|| "No result in sidecar response".to_string())
         .map(|v| (v, None))  // Process exited, return None
+}
+
+/// Send a request without closing stdin (keepalive mode).
+/// Reads progress JSON lines from stderr and calls the progress callback.
+/// Returns the response and the child for reuse.
+pub fn send_request_keepalive<F>(
+    mut child: Child,
+    request: &JsonRpcRequest,
+    on_progress: F,
+) -> Result<(serde_json::Value, Child), String>
+where
+    F: Fn(&str, &str) + Send + 'static,
+{
+    let request_str = serde_json::to_string(request)
+        .map_err(|e| format!("Failed to serialize: {}", e))?;
+
+    // Write request to stdin
+    if let Some(ref mut stdin) = child.stdin {
+        stdin.write_all(request_str.as_bytes())
+            .map_err(|e| format!("Failed to write to stdin: {}", e))?;
+        stdin.write_all(b"\n")
+            .map_err(|e| format!("Failed to write newline: {}", e))?;
+    }
+
+    // Read stderr for progress in a separate thread
+    let stderr = child.stderr.take()
+        .ok_or_else(|| "No stderr".to_string())?;
+
+    std::thread::spawn(move || {
+        let reader = BufReader::new(stderr);
+        for line in reader.lines() {
+            if let Ok(line) = line {
+                if let Ok(msg) = serde_json::from_str::<serde_json::Value>(&line) {
+                    if msg.get("type").and_then(|v| v.as_str()) == Some("progress") {
+                        let step = msg.get("step").and_then(|v| v.as_str()).unwrap_or("");
+                        let detail = msg.get("detail").and_then(|v| v.as_str()).unwrap_or("");
+                        on_progress(step, detail);
+                    }
+                }
+            }
+        }
+    });
+
+    // Read response from stdout (keepalive: do NOT close stdin, process stays alive)
+    let stdout = child.stdout.take()
+        .ok_or_else(|| "No stdout".to_string())?;
+    let mut reader = BufReader::new(stdout);
+    let mut response_line = String::new();
+    reader.read_line(&mut response_line)
+        .map_err(|e| format!("Failed to read stdout: {}", e))?;
+
+    let response: JsonRpcResponse = serde_json::from_str(response_line.trim())
+        .map_err(|e| format!("Invalid response: {} (raw: {})", e, response_line))?;
+
+    if let Some(error) = response.error {
+        return Err(format!("Sidecar error {}: {}", error.code, error.message));
+    }
+
+    let result = response.result
+        .ok_or_else(|| "No result in sidecar response".to_string())?;
+
+    Ok((result, child))
 }

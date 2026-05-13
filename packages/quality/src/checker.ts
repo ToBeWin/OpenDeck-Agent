@@ -1,4 +1,4 @@
-import type { Deck, Slide, SlideElement } from "@opendeck/slide-dsl";
+import type { Deck, Slide } from "@opendeck/slide-dsl";
 import type { DeckQualityScore, SlideQualityScore, QualityIssue } from "./types";
 
 // ─── Slide-level checks ──────────────────────────────────────────────────────
