@@ -158,37 +158,54 @@ function makeThemeSpec(themeId: string): ThemeSpec {
 export async function generateSlideDSL(
   provider: TextModelProvider,
   plan: DeckPlan,
-  themeId?: string
+  themeId?: string,
+  onProgress?: (slideIndex: number, total: number, label: string) => void
 ): Promise<Deck> {
   const resolvedThemeId = themeId ?? plan.theme;
   const themeSpec = makeThemeSpec(resolvedThemeId);
 
+  // Parallel generation with concurrency limit of 4
+  const CONCURRENCY = 4;
   const slides: Slide[] = [];
+  const allPlans = plan.slides;
 
-  for (const slidePlan of plan.slides) {
-    const { systemPrompt, userPrompt } = buildSlidePrompt(slidePlan, {
-      id: themeSpec.id,
-      name: themeSpec.name,
-      style: themeSpec.style,
-    });
+  for (let batch = 0; batch < allPlans.length; batch += CONCURRENCY) {
+    const batchPlans = allPlans.slice(batch, batch + CONCURRENCY);
+    const batchResults = await Promise.all(
+      batchPlans.map(async (slidePlan) => {
+        const { systemPrompt, userPrompt } = buildSlidePrompt(slidePlan, {
+          id: themeSpec.id,
+          name: themeSpec.name,
+          style: themeSpec.style,
+        });
 
-    const slideResult = await getStructuredOutput(provider, {
-      prompt: userPrompt,
-      systemPrompt,
-      schema: slideSchema,
-      maxRetries: 3,
-    });
+        const slideResult = await getStructuredOutput(provider, {
+          prompt: userPrompt,
+          systemPrompt,
+          schema: slideSchema,
+          maxRetries: 2,
+        });
 
-    slides.push({
-      id: slideResult.id,
-      index: slideResult.index,
-      type: slideResult.type as Slide["type"],
-      layout: slideResult.layout as Slide["layout"],
-      communicationGoal: slideResult.communicationGoal,
-      mainMessage: slideResult.mainMessage,
-      elements: slideResult.elements as Slide["elements"],
-      speakerNote: slideResult.speakerNote,
-    });
+        return slideResult;
+      })
+    );
+
+    for (const slideResult of batchResults) {
+      const idx = slideResult.index;
+      slides.push({
+        id: slideResult.id,
+        index: idx,
+        type: slideResult.type as Slide["type"],
+        layout: slideResult.layout as Slide["layout"],
+        communicationGoal: slideResult.communicationGoal,
+        mainMessage: slideResult.mainMessage,
+        elements: slideResult.elements as Slide["elements"],
+        speakerNote: slideResult.speakerNote,
+      });
+      if (onProgress) {
+        onProgress(idx + 1, allPlans.length, `Slide ${idx + 1}`);
+      }
+    }
   }
 
   const deck: Deck = {

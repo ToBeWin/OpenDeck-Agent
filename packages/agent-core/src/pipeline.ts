@@ -4,6 +4,8 @@ import { parseIntent } from "./intent-agent";
 import { planDeck } from "./deck-planner";
 import { generateSlideDSL } from "./slide-architect";
 
+export type ProgressCallback = (step: string, detail?: string) => void;
+
 export interface GenerateDeckOptions {
   prompt: string;
   purpose?: string;
@@ -14,6 +16,7 @@ export interface GenerateDeckOptions {
   provider: TextModelProvider;
   qualityLoop?: boolean;
   minQualityScore?: number;
+  onProgress?: ProgressCallback;
 }
 
 export interface PipelineWarning {
@@ -24,12 +27,15 @@ export interface PipelineWarning {
 export async function generateDeck(
   options: GenerateDeckOptions
 ): Promise<Deck> {
+  const { onProgress } = options;
   const warnings: PipelineWarning[] = [];
 
   // 1. Parse intent
+  if (onProgress) onProgress("intent", "Analyzing request...");
   const intent = await parseIntent(options.provider, options.prompt);
 
   // 2. Plan deck structure
+  if (onProgress) onProgress("planning", "Structuring outline...");
   const plan = await planDeck(options.provider, {
     topic: options.prompt,
     purpose:
@@ -42,13 +48,18 @@ export async function generateDeck(
   });
 
   // 3. Generate Slide DSL
+  if (onProgress) onProgress("generating", `Creating ${plan.slides.length} slides...`);
   let deck = await generateSlideDSL(
     options.provider,
     plan,
-    options.theme ?? "bloomberg_dark"
+    options.theme ?? "bloomberg_dark",
+    (idx, total) => {
+      if (onProgress) onProgress("generating", `Slide ${idx}/${total}`);
+    }
   );
 
   // 4. Quality feedback loop (optional)
+  if (onProgress) onProgress("quality", "Checking quality...");
   if (options.qualityLoop !== false) {
     try {
       const { scoreDeck } = await import("@opendeck/quality");
@@ -94,6 +105,7 @@ export async function generateDeck(
   }
 
   // 5. Visual planning
+  if (onProgress) onProgress("layout", "Positioning elements...");
   try {
     const { planVisuals } = await import("@opendeck/visual-planner");
     const visualPlans = planVisuals(deck.slides);

@@ -60,20 +60,46 @@ export function renderChartFocus(
     editableTextCount++;
   }
 
-  pptxSlide.addChart(pres.ChartType.bar, chartData, {
+  // Map chart type to PptxGenJS chart type
+  const chartTypeMap: Record<string, string> = {
+    bar: "bar",
+    line: "line",
+    pie: "pie",
+    area: "area",
+    scatter: "scatter",
+  };
+  const chartTypeName: string = chartEl?.chartType ?? "bar";
+  const pptxChartType = chartTypeMap[chartTypeName] || "bar";
+
+  // Pie charts use a different data format (single series, labels + values)
+  const isPie = chartTypeName === "pie";
+  const pieData = isPie && Array.isArray((chartEl?.data as Record<string, unknown>)?.labels)
+    ? [{ name: "Distribution", labels: (chartEl?.data as Record<string, unknown>).labels as string[], values: (chartEl?.data as Record<string, unknown>).values as number[] }]
+    : undefined;
+
+  const finalChartData = pieData ?? chartData;
+
+  const chartOpts: Record<string, unknown> = {
     x: 0.8,
     y: labelEl ? 1.9 : 1.5,
     w: 11.7,
     h: 4.5,
     showTitle: false,
-    showValue: true,
+    showValue: !isPie,
+    showLegend: isPie,
     catAxisLabelFontSize: 12,
     valAxisLabelFontSize: 10,
     catAxisLabelColor: theme.colors.textPrimary,
     valAxisLabelColor: theme.colors.textPrimary,
-    chartColors: theme.colors.chartColors.slice(0, 4),
-    barGapWidthPct: 80,
-  });
+    chartColors: theme.colors.chartColors.slice(0, isPie ? 8 : 4),
+  };
+
+  if (!isPie) {
+    chartOpts.barGapWidthPct = 80;
+    chartOpts.lineSize = 2.5;
+  }
+
+  pptxSlide.addChart(pptxChartType as "bar" | "line" | "pie" | "area" | "scatter", finalChartData, chartOpts as PptxGenJS.IChartOpts);
   chartCount++;
 
   if (captionEl) {
