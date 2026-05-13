@@ -10,6 +10,9 @@ importers:
 
   apps/desktop-tauri:
     dependencies:
+      '@opendeck/document-parsers':
+        specifier: workspace:*
+        version: link:../../packages/document-parsers
       '@opendeck/quality':
         specifier: workspace:*
         version: link:../../packages/quality

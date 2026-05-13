@@ -487,15 +487,47 @@ export const useStore = create<AppState>((set, get) => ({
         ],
       });
       if (!selected) { set({ loading: false, generationStep: null }); return; }
-      const path = Array.isArray(selected) ? selected[0] : selected;
+      const filePath = (Array.isArray(selected) ? selected[0] : selected) as string;
 
       set({ generationStep: "understanding" });
       const { readTextFile } = await import("./lib/tauri");
-      const content = await readTextFile(path as string);
+      const content = await readTextFile(filePath);
+
       if (!content.trim()) throw new Error("File is empty");
 
-      // Use document content as prompt
-      const prompt = `Based on the following document, create a presentation:\n\n${content.slice(0, 8000)}`;
+      // Detect file type by extension
+      const ext = filePath.split(".").pop()?.toLowerCase() ?? "";
+
+      let prompt: string;
+
+      if (ext === "md") {
+        // Structured markdown parsing
+        const { parseMarkdown, documentToSlides } = await import("@opendeck/document-parsers");
+        const doc = parseMarkdown(content);
+        const outlines = documentToSlides(doc);
+
+        const structure = outlines.map((o, i) =>
+          `Slide ${i + 1}: "${o.title}"\nBullets: ${o.content.join("; ")}`
+        ).join("\n\n");
+
+        prompt = `Based on the following document titled "${doc.title}" with ${doc.sections.length} sections, create a presentation.\n\nDocument structure:\n${structure}\n\nFull content for reference:\n${content.slice(0, 6000)}`;
+      } else if (ext === "txt") {
+        // Plain text parsing with paragraph detection
+        const { parseText } = await import("@opendeck/document-parsers");
+        const doc = parseText(content);
+        prompt = `Based on the following document, create a presentation.\n\nTitle: ${doc.title}\nSections: ${doc.sections.length}\n\nContent:\n${content.slice(0, 8000)}`;
+      } else if (ext === "docx") {
+        // Basic docx text extraction (read as text — docx XML contains raw text)
+        // A proper docx parser would need a zip library; for now extract what we can
+        const text = content.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
+        const title = filePath.split("/").pop()?.replace(/\.docx$/i, "") ?? "Document";
+        prompt = `Based on the following document "${title}", create a presentation.\n\nContent:\n${text.slice(0, 8000)}`;
+      } else {
+        // pdf or unknown — try raw text
+        const text = content.replace(/[^\x20-\x7E\u4e00-\u9fff\u3040-\u309f\u30a0-\u30ff\n]/g, " ").replace(/\s+/g, " ").trim();
+        prompt = `Based on the following document, create a presentation.\n\nContent:\n${text.slice(0, 8000)}`;
+      }
+
       set({ generationStep: "planning" });
 
       const { generateDeck } = await import("./lib/tauri");
